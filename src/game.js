@@ -41,7 +41,7 @@ function loadSave(){
   }catch{return structuredClone(defaultSave);}
 }
 const save=loadSave();
-const player={...save.player,direction:'south',moving:false,step:0,swingStart:0,swingUntil:0,stamina:100,target:null,path:[]};
+const player={...save.player,direction:'south',attackDirection:'south',moving:false,step:0,swingStart:0,swingUntil:0,stamina:100,target:null,path:[]};
 let viewport={w:0,h:0,dpr:1}, camera={x:player.x,y:player.y};
 let lastTime=performance.now(), frame=0, lastSaveTime=0;
 let inventoryFilter='all',toastTimer=null, panelOrder=20;
@@ -129,6 +129,7 @@ function openChest(){
 function attack(){
   const now=performance.now();if(player.swingUntil>now)return;
   player.swingStart=now;
+  player.attackDirection=player.direction; // Lock direction for the full swipe.
   player.swingUntil=now+360;
   if(!save.equipment.mainHand)toast('You practice an unarmed strike.');
   else toast(`You test the balance of your ${ITEM_DEFS[save.equipment.mainHand].name.toLowerCase()}.`);
@@ -268,7 +269,7 @@ function drawActors(time){
       const swinging=now<player.swingUntil;
       const swingPhase=swinging?Math.min(1,(now-player.swingStart)/(player.swingUntil-player.swingStart||1)):false;
       const walking=player.moving&&Math.floor(player.step)%2===1;
-      const sprite=sprites.character(save.equipment,player.direction,walking,swingPhase);
+      const sprite=sprites.character(save.equipment,swinging?player.attackDirection:player.direction,walking,swingPhase);
       ctx.drawImage(sprite,Math.round(pt.x-sprite.width/2),Math.round(pt.y-136));
       // Subtle name plate improves legibility when surrounded by trees.
       ctx.font='600 10px "DM Sans",Arial';ctx.textAlign='center';
