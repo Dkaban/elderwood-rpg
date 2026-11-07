@@ -56,38 +56,43 @@ function ground(kind, v=0) {
 }
 
 function tree(v=0) {
-  return stamp(126,190,2,(c)=>{
-    ellipse(c,32,86,25,6,'rgba(9,30,23,.25)');
-    poly(c,[27,85,27,47,24,40,29,36,34,55,39,40,43,43,36,64,36,85], '#493d31');
-    rect(c,30,49,3,33,'#6b5340'); rect(c,33,58,1,23,'#9b7650');
-    let clusters=[[-5,35,17,12],[9,29,19,15],[26,22,20,16],[42,37,19,14],[18,41,25,17],[36,51,16,14],[3,52,16,12]];
-    let deep=['#1a493b','#1c503f','#234c38'][v%3];
-    let mid=['#296446','#30714b','#376447'][v%3];
-    let light=['#3d8053','#4d9160','#5f8551'][v%3];
+  return stamp(192,190,2,(c)=>{
+    const ox=16, trunkX=32+ox;
+    ellipse(c,trunkX,86,25,6,'rgba(9,30,23,.25)');
+    poly(c,[trunkX-5,85,trunkX-5,47,trunkX-8,40,trunkX-3,36,trunkX+2,55,trunkX+7,40,trunkX+11,43,trunkX+4,64,trunkX+4,85], '#493d31');
+    rect(c,trunkX-2,49,3,33,'#6b5340'); rect(c,trunkX+1,58,1,23,'#9b7650');
+    const clusters=[[-5,35,17,12],[9,29,19,15],[26,22,20,16],[42,37,19,14],[18,41,25,17],[36,51,16,14],[3,52,16,12]];
+    const deep=['#1a493b','#1c503f','#234c38'][v%3];
+    const mid=['#296446','#30714b','#376447'][v%3];
+    const light=['#3d8053','#4d9160','#5f8551'][v%3];
     clusters.forEach(([x,y,rx,ry],i)=>{
-      ellipse(c,32+x, y+7, rx,ry,deep);
-      ellipse(c,29+x, y+3, rx-2,ry-2,mid);
-      ellipse(c,27+x,y,Math.max(4,rx-6),Math.max(4,ry-6), light);
+      x-=18; // Keep the entire crown centered over the trunk, without clipped edges.
+      ellipse(c,trunkX+x, y+7, rx,ry,deep);
+      ellipse(c,trunkX-3+x, y+3, rx-2,ry-2,mid);
+      ellipse(c,trunkX-5+x,y,Math.max(4,rx-6),Math.max(4,ry-6), light);
       for(let j=0;j<13;j++) {
-        const px= Math.round(28+x+(rnd(i*101+j*7+v*34)-.5)*rx*1.5);
+        const px= Math.round(trunkX-4+x+(rnd(i*101+j*7+v*34)-.5)*rx*1.5);
         const py= Math.round(y+(rnd(i*55+j*13+v*39)-.5)*ry*1.5);
         rect(c,px,py,j%3===0?3:2,1,j%4===0?'#88a96d':j%2===0?light:mid);
       }
     });
-    // A few sparse dark pixels create depth under the leaves.
-    for(let i=0;i<25;i++) {let x=9+rnd(i*7+v)*48,y=26+rnd(i*13+v)*39;rect(c,x,y,2,2,deep);}
+    for(let i=0;i<25;i++) {
+      const x=trunkX-23+rnd(i*7+v)*48,y=26+rnd(i*13+v)*39;
+      rect(c,x,y,2,2,deep);
+    }
   });
 }
 function pine() {
-  return stamp(112,190,2,(c)=>{
-    ellipse(c,28,87,23,5,'rgba(9,30,23,.25)');
-    rect(c,26,36,5,50,'#544131'); rect(c,27,44,2,39,'#856346');
+  return stamp(140,190,2,(c)=>{
+    const ox=7, center=28+ox;
+    ellipse(c,center,87,23,5,'rgba(9,30,23,.25)');
+    rect(c,center-2,36,5,50,'#544131'); rect(c,center-1,44,2,39,'#856346');
     for(let j=0;j<4;j++){
       const y=10+j*14, wid=13+j*7;
-      poly(c,[28, y-3, 28-wid, y+27,28+wid,y+27],'#173e37');
-      poly(c,[28, y-6, 28-wid+4, y+20,28+wid-3,y+20],j%2===0?'#285c46':'#27543f');
+      poly(c,[center, y-3, center-wid, y+27,center+wid,y+27],'#173e37');
+      poly(c,[center, y-6, center-wid+4, y+20,center+wid-3,y+20],j%2===0?'#285c46':'#27543f');
       for(let i=0;i<11;i++){
-        const x=28+(rnd(j*31+i*13)-.5)*wid*1.65;
+        const x=center+(rnd(j*31+i*13)-.5)*wid*1.65;
         const py=y+6+rnd(j*78+i*9)*15;
         rect(c,x,py,2,1,i%3===0?'#5f8964':'#3c7552');
       }
@@ -170,9 +175,62 @@ function campfire(frame=0) {
     poly(c,[17,31,19,23,20,31],'#fff3a2');
   });
 }
-function spriteCharacter(direction, equipment, step=false, swing=false) {
+function drawHeldWeapon(c, direction, weaponId, swingPhase=false) {
+  if(!weaponId)return;
+  const back=direction==='north', left=direction==='west', right=direction==='east';
+  const phase = swingPhase===false ? null : Math.max(0, Math.min(1, swingPhase));
+  if(weaponId==='oak-staff'){
+    const x = back?43:left?9:44;
+    if(phase===null){
+      poly(c,[x,10,x+3,8,x+5,68,x+2,69],'#77583a');
+      rect(c,x+1,12,2,45,'#bd9866');
+      ellipse(c,x+2,9,3,4,'#5d855c');
+      return;
+    }
+    const pivotX = x + (right?0:left?4:2);
+    const pivotY = 44;
+    const start = right? -1.15 : left? 1.15 : -0.95;
+    const end   = right?  0.55 : left?-0.55 :  0.95;
+    const angle = start + (end-start) * phase;
+    c.save();
+    c.translate(pivotX,pivotY);
+    c.rotate(angle);
+    rect(c,-1,-36,3,44,'#bd9866');
+    poly(c,[-2,-39,1,-41,3,-36,0,-35],'#77583a');
+    ellipse(c,0,-39,3,4,'#5d855c');
+    c.restore();
+    return;
+  }
+  const x = back?43:left?9:44;
+  if(phase===null){
+    rect(c,x+1,15,3,45,'#7e6751');
+    poly(c,[x,31,x,8,x+2,2,x+5,8,x+5,31],palette.iron);
+    rect(c,x+1,8,1,22,'#edf1e2');
+    rect(c,x-6,31,17,4,'#c7a563');
+    rect(c,x+1,36,3,15,'#785032');
+    return;
+  }
+  const pivotX = x + 2;
+  const pivotY = 33;
+  const start = back ? 2.35 : right ? -1.35 : left ? 1.35 : -1.9;
+  const end   = back ? 0.75 : right ?  0.35 : left ?-0.35 :  1.05;
+  const angle = start + (end-start) * phase;
+  c.save();
+  c.translate(pivotX,pivotY);
+  c.rotate(angle);
+  poly(c,[-2,-2,-2,-25,0,-31,3,-25,3,-2],palette.iron);
+  rect(c,-1,-24,1,18,'#edf1e2');
+  rect(c,-8,-2,16,4,'#c7a563');
+  rect(c,-1,2,3,15,'#785032');
+  rect(c,-1,15,3,2,'#4f3729');
+  c.restore();
+}
+
+function spriteCharacter(direction, equipment, step=false, swingPhase=false) {
   // Each combination is a real raster sprite; reuse until loadout or animation changes.
-  return stamp(108,148,2,c=>{
+  return stamp(220,148,2,c=>{
+    // Transparent margins leave room for the full sword swipe.
+    c.save();c.translate(28,0);
     const E=equipment, back=direction==='north';
     ellipse(c,27,69,13,4,'rgba(7,22,19,.24)');
     const bob=step?1:0;
@@ -225,22 +283,9 @@ function spriteCharacter(direction, equipment, step=false, swing=false) {
       poly(c,[sx+2,33,sx+11,30,sx+12,36,sx+10,48,sx+7,53,sx+3,45],'#a78f60');
       rect(c,sx+6,33,3,18,'#6f4830');rect(c,sx+3,39,10,3,'#d8be75');
     }
-    if(E.mainHand){
-      let weaponX = back?43:left?9:44;
-      if(swing) weaponX += right?-7:8;
-      if(E.mainHand==='oak-staff'){
-        poly(c,[weaponX,10,weaponX+3,8,weaponX+5,68,weaponX+2,69],'#77583a');
-        rect(c,weaponX+1,12,2,45,'#bd9866');
-        ellipse(c,weaponX+2,9,3,4,'#5d855c');
-      }else{
-        rect(c,weaponX+1,15,3,45,'#7e6751');
-        poly(c,[weaponX,31,weaponX,8,weaponX+2,2,weaponX+5,8,weaponX+5,31],palette.iron);
-        rect(c,weaponX+1,8,1,22,'#edf1e2');
-        rect(c,weaponX-6,31,17,4,'#c7a563');
-        rect(c,weaponX+1,36,3,15,'#785032');
-      }
-    }
+    if(E.mainHand) drawHeldWeapon(c, direction, E.mainHand, swingPhase);
     c.restore();
+    c.restore(); // Undo wide-canvas centering.
   });
 }
 
@@ -262,9 +307,13 @@ export const sprites={
     }
     return worldSpriteCache[key];
   },
-  character(equipment,direction='south',step=false,swing=false){
-    const key=JSON.stringify([equipment,direction,step,swing]);
-    if(!worldSpriteCache[key])worldSpriteCache[key]=spriteCharacter(direction,equipment,step,swing);
+  character(equipment,direction='south',step=false,swingPhase=false){
+    const swingKey = swingPhase===false ? false : Math.max(0, Math.min(4, Math.round(swingPhase*4)));
+    const key=JSON.stringify([equipment,direction,step,swingKey]);
+    if(!worldSpriteCache[key]){
+      const drawPhase = swingKey===false ? false : swingKey/4;
+      worldSpriteCache[key]=spriteCharacter(direction,equipment,step,drawPhase);
+    }
     return worldSpriteCache[key];
   }
 };
