@@ -1,10 +1,13 @@
 import {sprites} from './sprites.js';
 import {createWorld, project, unproject, MAP_SIZE, TILE_W, TILE_H, START} from './world.js';
+import {createWildlife, updateWildlife} from './wildlife.js';
+import {FACING, ATTACK_REACH, ATTACK_HALF_ANGLE, isInAttackArc} from './combat.js';
 
 const el=id=>document.getElementById(id);
 const canvas=el('world'), ctx=canvas.getContext('2d',{alpha:false});
 const dollCanvas=el('paperDoll'), dollCtx=dollCanvas.getContext('2d');
 const world=createWorld();
+const animals=createWildlife(world);
 const ITEM_DEFS={
   'oak-staff':      {name:'Oak Staff',          slot:'mainHand',type:'weapon',icon:'⚚',detail:'A sturdy walking staff · 2–5 damage',armor:0},
   'iron-sword':     {name:'Iron Shortsword',    slot:'mainHand',type:'weapon',icon:'⚔',detail:'One-handed blade · 3–7 damage',armor:0},
@@ -41,7 +44,10 @@ function loadSave(){
   }catch{return structuredClone(defaultSave);}
 }
 const save=loadSave();
-const player={...save.player,direction:'south',attackDirection:'south',moving:false,step:0,swingStart:0,swingUntil:0,stamina:100,target:null,path:[]};
+const player={...save.player,direction:'south',attackDirection:'south',moving:false,step:0,swingStart:0,swingUntil:0,swingHit:false,stamina:100,target:null,path:[]};
+const dummy={hp:100,maxHp:100,hits:0,flashUntil:0,resetAt:0};
+let damageNumbers=[];
+const debug={collisions:false,attacks:false};
 let viewport={w:0,h:0,dpr:1}, camera={x:player.x,y:player.y};
 let lastTime=performance.now(), frame=0, lastSaveTime=0;
 let inventoryFilter='all',toastTimer=null, panelOrder=20;
@@ -99,7 +105,7 @@ function renderEquipment(){
   el('armorValue').textContent=String(Object.values(save.equipment).reduce((sum,id)=>sum+(ITEM_DEFS[id]?.armor||0),0));
   dollCtx.clearRect(0,0,dollCanvas.width,dollCanvas.height);dollCtx.imageSmoothingEnabled=false;
   const img=sprites.character(save.equipment,'south');
-  dollCtx.drawImage(img,56,0,108,148,18,4,184,252); // Crop wide combat canvas to show the paper doll full size.
+  dollCtx.drawImage(img,18,4,184,252);
 }
 function sync(){renderInventory();renderEquipment();persist();}
 function equip(id){
@@ -129,11 +135,32 @@ function openChest(){
 function attack(){
   const now=performance.now();if(player.swingUntil>now)return;
   player.swingStart=now;
-  player.attackDirection=player.direction; // Lock direction for the full swipe.
-  player.swingUntil=now+360;
-  if(!save.equipment.mainHand)toast('You practice an unarmed strike.');
-  else toast(`You test the balance of your ${ITEM_DEFS[save.equipment.mainHand].name.toLowerCase()}.`);
+  player.swingHit=false;
+  player.attackDirection=player.direction; // Lock facing for the full swing.
+  player.swingDuration=360;
+  player.swingUntil=now+player.swingDuration;
+  // The dummy takes damage once when the weapon reaches its forward arc.
 }
+function resolveAttack(t){
+  if(!player.swingHit&&t>=player.swingStart+player.swingDuration*.33 && t<player.swingUntil){
+    player.swingHit=true; // At most one hit per swing, regardless of frame rate.
+    const origin=project(player.x,player.y),target=project(world.dummy.x,world.dummy.y);
+    if(isInAttackArc(origin,target,player.attackDirection)){
+      const weapon=save.equipment.mainHand;
+      const low=weapon==='iron-sword'?3:weapon==='oak-staff'?2:1;
+      const high=weapon==='iron-sword'?7:weapon==='oak-staff'?5:2;
+      const damage=low+Math.floor(Math.random()*(high-low+1));
+      dummy.hp=Math.max(0,dummy.hp-damage);
+      dummy.hits++;
+      dummy.flashUntil=t+180;
+      if(dummy.hp===0)dummy.resetAt=t+1400;
+      damageNumbers.push({x:world.dummy.x,y:world.dummy.y,value:damage,start:t,drift:(Math.random()-.5)*15});
+    }
+  }
+  if(dummy.resetAt>0&&t>=dummy.resetAt){dummy.hp=dummy.maxHp;dummy.resetAt=0;}
+  damageNumbers=damageNumbers.filter(p=>t-p.start<940);
+}
+
 function updateLocation(){
   const r=Math.hypot(player.x-29,player.y-29);el('locationText').textContent=r<5?'The Old Clearing':r<14?'Whispering Vale':'Deepwood Trail';
   const nearChest=Math.hypot(player.x-28.5,player.y-27.3)<3.2;
@@ -196,14 +223,16 @@ function walkTo(x,y){
 }
 function move(dx,dy,step){
   const tryX=player.x+dx*step,tryY=player.y+dy*step;
-  if(!world.collides(tryX,tryY)){player.x=tryX;player.y=tryY;return true;}
+  if(!world.collides(tryX,tryY,.2)){player.x=tryX;player.y=tryY;return true;}
   let moved=false;
-  if(!world.collides(tryX,player.y)){player.x=tryX;moved=true;}
-  if(!world.collides(player.x,tryY)){player.y=tryY;moved=true;}
+  if(!world.collides(tryX,player.y,.2)){player.x=tryX;moved=true;}
+  if(!world.collides(player.x,tryY,.2)){player.y=tryY;moved=true;}
   return moved;
 }
 function update(dt,t){
   frame++;
+  updateWildlife(animals,world,player,dt);
+  resolveAttack(t);
   let screenX=0,screenY=0;
   if(keys.has('a')||keys.has('arrowleft'))screenX--;
   if(keys.has('d')||keys.has('arrowright'))screenX++;
@@ -259,6 +288,11 @@ function drawActors(time){
     if(point.x<-180||point.x>viewport.w+180||point.y<-200||point.y>viewport.h+180)continue;
     drawList.push({kind:'obj',item,pt:point,depth:item.x+item.y});
   }
+  for(const animal of animals){
+    const pt=screenPoint(animal.x,animal.y);
+    if(pt.x<-90||pt.x>viewport.w+90||pt.y<-95||pt.y>viewport.h+95)continue;
+    drawList.push({kind:'animal',animal,pt,depth:animal.x+animal.y});
+  }
   drawList.push({kind:'player',pt:screenPoint(player.x,player.y),depth:player.x+player.y+.01});
   drawList.sort((a,b)=>a.depth-b.depth);
   for(const entity of drawList){
@@ -275,9 +309,13 @@ function drawActors(time){
       ctx.font='600 10px "DM Sans",Arial';ctx.textAlign='center';
       ctx.fillStyle='rgba(7,23,17,.8)';ctx.fillText('THE WANDERER',pt.x+1,pt.y-136);
       ctx.fillStyle='#e7e0c5';ctx.fillText('THE WANDERER',pt.x,pt.y-137);
+    }else if(entity.kind==='animal'){
+      const a=entity.animal;
+      const sprite=sprites.wildlife(a.type,Math.floor(a.step)%2,a.facing);
+      ctx.drawImage(sprite,Math.round(pt.x-sprite.width/2),Math.round(pt.y-sprite.height+5));
     }else{
       const item=entity.item;
-      const variant=item.kind==='chest'?Number(save.chestLooted):item.kind==='fire'?Math.floor(time/350)%3:item.variant;
+      const variant=item.kind==='chest'?Number(save.chestLooted):item.kind==='fire'?Math.floor(time/350)%3:item.kind==='dummy'?Number(time<dummy.flashUntil):item.variant;
       const sprite=sprites.get(item.kind,variant);
       let anchor=sprite.height-7;
       if(item.kind==='tree'||item.kind==='pine')anchor=sprite.height-14;
@@ -287,8 +325,58 @@ function drawActors(time){
         ctx.fillStyle=glow;ctx.fillRect(pt.x-100,pt.y-112,200,200);
       }
       ctx.drawImage(sprite,Math.round(pt.x-sprite.width/2),Math.round(pt.y-anchor));
+      if(item.kind==='dummy'){
+        ctx.save();ctx.textAlign='center';ctx.font='600 10px "DM Sans",Arial';
+        ctx.fillStyle='rgba(10,24,19,.87)';ctx.fillRect(pt.x-52,pt.y-132,104,32);
+        ctx.fillStyle='#f3db9f';ctx.fillText('TRAINING DUMMY',pt.x,pt.y-119);
+        ctx.fillStyle='#303b2f';ctx.fillRect(pt.x-40,pt.y-112,80,5);
+        ctx.fillStyle='#b88753';ctx.fillRect(pt.x-40,pt.y-112,80*dummy.hp/dummy.maxHp,5);
+        ctx.restore();
+      }
     }
   }
+}
+function drawDamageNumbers(time){
+  for(const damage of damageNumbers){
+    const age=(time-damage.start)/940;
+    const pt=screenPoint(damage.x,damage.y);
+    ctx.save();ctx.globalAlpha=Math.max(0,1-age);
+    ctx.textAlign='center';ctx.font='bold 25px "DM Sans",Arial';
+    ctx.lineWidth=4;ctx.strokeStyle='#36231c';
+    const x=pt.x+damage.drift*age,y=pt.y-148-age*49;
+    ctx.strokeText(String(damage.value),x,y);ctx.fillStyle='#ffeab1';ctx.fillText(String(damage.value),x,y);
+    ctx.restore();
+  }
+}
+function debugFootprint(x,y,r,color){
+  const pt=screenPoint(x,y);
+  ctx.beginPath();ctx.ellipse(pt.x,pt.y-3,r*TILE_W*.72,r*TILE_H*.72,0,0,Math.PI*2);
+  ctx.fillStyle=color.replace('1)', '.16)');ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.stroke();
+}
+function drawDebug(time){
+  if(debug.attacks&&time<player.swingUntil){
+    const direction=player.attackDirection,axis=FACING[direction];
+    const center=Math.atan2(axis.y,axis.x);
+    const pt=screenPoint(player.x,player.y);
+    const ox=pt.x,oy=pt.y-48;
+    ctx.beginPath();ctx.moveTo(ox,oy);
+    ctx.arc(ox,oy,ATTACK_REACH,center-ATTACK_HALF_ANGLE,center+ATTACK_HALF_ANGLE);
+    ctx.closePath();ctx.fillStyle='rgba(244,202,91,.20)';ctx.fill();
+    ctx.strokeStyle='#ffce72';ctx.lineWidth=2;ctx.stroke();
+  }
+  if(!debug.collisions)return;
+  // Red diamonds indicate impassable terrain cells, exactly as collides() tests them.
+  for(const key of world.obstacles){
+    const [x,y]=key.split(',').map(Number),pt=screenPoint(x+.5,y+.5);
+    if(pt.x<-TILE_W||pt.x>viewport.w+TILE_W||pt.y<-TILE_H||pt.y>viewport.h+TILE_H)continue;
+    ctx.beginPath();ctx.moveTo(pt.x,pt.y-TILE_H/2);
+    ctx.lineTo(pt.x+TILE_W/2,pt.y);ctx.lineTo(pt.x,pt.y+TILE_H/2);
+    ctx.lineTo(pt.x-TILE_W/2,pt.y);ctx.closePath();
+    ctx.fillStyle='rgba(240,72,80,.13)';ctx.fill();
+    ctx.strokeStyle='rgba(251,85,97,.55)';ctx.lineWidth=1;ctx.stroke();
+  }
+  debugFootprint(player.x,player.y,.2,'rgba(107,236,145,1)');
+  debugFootprint(world.dummy.x,world.dummy.y,.43,'rgba(255,190,88,1)');
 }
 function drawFireflies(time){
   for(let i=0;i<35;i++){
@@ -303,7 +391,7 @@ function rhash(n){let s=Math.sin(n*97.72+22)*45636;return s-Math.floor(s);}
 function render(t){
   const dt=Math.min((t-lastTime)/1000,.05);lastTime=t;
   update(dt,t);ctx.imageSmoothingEnabled=false;
-  drawGround();drawActors(t);drawFireflies(t);
+  drawGround();drawActors(t);drawDebug(t);drawDamageNumbers(t);drawFireflies(t);
   requestAnimationFrame(render);
 }
 function resize(){
@@ -322,11 +410,14 @@ function initializeUI(){
     el(button).addEventListener('click',()=>toggle(id));
   }
   el('hotbarAttack').addEventListener('click',attack);el('mobileAttack').addEventListener('click',attack);
+  el('btnDebugMenu').addEventListener('click',()=>{panel('helpWindow',false);panel('debugWindow',true);});
+  el('debugCollisions').addEventListener('change',event=>debug.collisions=event.target.checked);
+  el('debugAttacks').addEventListener('change',event=>debug.attacks=event.target.checked);
   document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>panel(button.dataset.close,false)));
   document.querySelectorAll('.inventory-tabs button').forEach(button=>button.addEventListener('click',()=>{inventoryFilter=button.dataset.filter;renderInventory();}));
   window.addEventListener('keydown',event=>{
     const key=event.key.toLowerCase();
-    if(['arrowup','arrowdown','arrowleft','arrowright',' ','shift'].includes(key))event.preventDefault();
+    if(['arrowup','arrowdown','arrowleft','arrowright',' ','shift','f3'].includes(key))event.preventDefault();
     if(event.repeat&&['i','p','e','f',' '].includes(key))return;
     keys.add(key);
     if(key==='i')toggle('inventoryWindow');
@@ -334,7 +425,8 @@ function initializeUI(){
     else if(key==='?'||key==='h')toggle('helpWindow');
     else if(key==='e')openChest();
     else if(key==='f'||key===' ')attack();
-    else if(key==='escape')for(const id of ['lootWindow','helpWindow','inventoryWindow','characterWindow'])panel(id,false);
+    else if(key==='f3')toggle('debugWindow');
+    else if(key==='escape')for(const id of ['lootWindow','helpWindow','debugWindow','inventoryWindow','characterWindow'])panel(id,false);
     else if(key==='1')attack();
     else if(key==='2')toggle('characterWindow');
     else if(key==='3')toggle('inventoryWindow');
