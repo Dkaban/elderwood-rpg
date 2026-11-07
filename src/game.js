@@ -137,12 +137,12 @@ function attack(){
   player.swingStart=now;
   player.swingHit=false;
   player.attackDirection=player.direction; // Lock facing for the full swing.
-  player.swingDuration=360;
+  player.swingDuration=310;
   player.swingUntil=now+player.swingDuration;
   // The dummy takes damage once when the weapon reaches its forward arc.
 }
 function resolveAttack(t){
-  if(!player.swingHit&&t>=player.swingStart+player.swingDuration*.33 && t<player.swingUntil){
+  if(!player.swingHit&&t>=player.swingStart+player.swingDuration*.43 && t<player.swingUntil){
     player.swingHit=true; // At most one hit per swing, regardless of frame rate.
     const origin=project(player.x,player.y),target=project(world.dummy.x,world.dummy.y);
     if(isInAttackArc(origin,target,player.attackDirection)){
@@ -250,7 +250,7 @@ function update(dt,t){
     else {dx=(target.x-player.x)/dist;dy=(target.y-player.y)/dist;screenX=(dx-dy)*Math.SQRT1_2;screenY=(dx+dy)*Math.SQRT1_2;}
   }
   const running=keys.has('shift')&&player.stamina>1&&manual;
-  const speed=(running?4.7:2.9);
+  const speed=(running?4.7:2.9)*(t<player.swingUntil?.52:1);
   let moving=false;
   if(dx||dy){
     const step=Math.min(dt*speed,0.12);
