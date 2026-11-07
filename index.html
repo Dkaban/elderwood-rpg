@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#13241f" />
+  <meta name="description" content="Elderwood — a single-player isometric fantasy RPG prototype. Explore a quiet forest and outfit your adventurer." />
+  <title>Elderwood · A Medieval RPG</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div id="app">
+  <canvas id="world" aria-label="Isometric fantasy forest game map"></canvas>
+  <div class="screen-edges"></div>
+
+  <header class="topbar">
+    <div class="game-brand"><div class="emblem" aria-hidden="true">✦</div><div><span class="brand-eyebrow">AN ISOMETRIC ADVENTURE</span><strong>ELDERWOOD</strong></div></div>
+    <div class="chapter-pill"><span class="chapter-symbol">❧</span><span>Chapter I <b>·</b> The Whispering Vale</span></div>
+    <nav class="top-actions" aria-label="Game panels">
+      <button id="btnCharacter" class="top-action active" title="Character (P)"><span>♙</span><span class="action-label">Character</span><kbd>P</kbd></button>
+      <button id="btnInventory" class="top-action active" title="Backpack (I)"><span>▤</span><span class="action-label">Backpack</span><kbd>I</kbd></button>
+      <button id="btnHelp" class="top-action" title="Controls (?)"><span>?</span><span class="action-label">Help</span></button>
+    </nav>
+  </header>
+
+  <div class="zone-title"><div class="zone-line"></div><span class="zone-overline">WESTERN MARCHES</span><h1>Whispering Vale</h1><p>The forest sleeps. Your story begins.</p></div>
+  <div class="location-pill"><span class="location-pin">◆</span><span id="locationText">The Old Clearing</span><span class="location-safe">✧ PEACEFUL</span></div>
+  <div id="interaction" class="interaction" hidden><kbd>E</kbd><span id="interactionText">Open supply chest</span></div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <div id="characterWindow" class="rpg-window character-window" role="dialog" aria-label="Character equipment">
+    <div class="window-heading"><div class="window-title"><span class="heading-rune">✧</span><span>CHARACTER</span></div><button class="window-close" data-close="characterWindow" title="Close character panel" aria-label="Close character panel">×</button></div>
+    <div class="character-name"><span class="character-icon">✤</span><div><strong>The Wanderer</strong><small>Level 1 · Adventurer</small></div><div class="level-gem">I</div></div>
+    <div class="doll-wrap">
+      <div class="doll-engraving">✦ &nbsp; ✧ &nbsp; ✦</div>
+      <canvas id="paperDoll" width="220" height="280" aria-label="Your character, showing currently equipped gear"></canvas>
+      <div id="equipSlots" class="equip-slots"></div>
+    </div>
+    <div class="character-stats"><div><span>STR</span><strong>10</strong></div><div><span>DEX</span><strong>10</strong></div><div><span>INT</span><strong>10</strong></div><div><span>ARMOR</span><strong id="armorValue">0</strong></div></div>
+    <p class="panel-hint">Select equipped gear to remove it.</p>
+  </div>
+
+  <div id="inventoryWindow" class="rpg-window inventory-window" role="dialog" aria-label="Backpack inventory">
+    <div class="window-heading"><div class="window-title"><span class="heading-rune">▥</span><span>BACKPACK</span></div><button class="window-close" data-close="inventoryWindow" title="Close backpack" aria-label="Close backpack">×</button></div>
+    <div class="inventory-intro"><div><small>YOUR BELONGINGS</small><strong><span id="inventoryCount">0</span> items</strong></div><div class="gold-amount"><span>◈</span> 28 <small>GOLD</small></div></div>
+    <div class="inventory-tabs" role="group" aria-label="Inventory category"><button data-filter="all" class="selected">All</button><button data-filter="weapon">Weapons</button><button data-filter="armor">Armor</button></div>
+    <div id="inventoryItems" class="inventory-items"></div>
+    <div class="inventory-footer"><span>✦</span> Click an item to equip · drag to a slot</div>
+  </div>
+
+  <div id="lootWindow" class="rpg-window loot-window hidden" role="dialog" aria-label="Supply chest">
+    <div class="window-heading"><div class="window-title"><span class="heading-rune">◈</span><span>TRAVELER'S CACHE</span></div><button class="window-close" data-close="lootWindow" aria-label="Close supply chest">×</button></div>
+    <p class="loot-story">Someone left a few useful things beside the old camp.</p>
+    <div id="lootItems"></div>
+  </div>
+
+  <div id="helpWindow" class="rpg-window help-window hidden" role="dialog" aria-label="Game controls">
+    <div class="window-heading"><div class="window-title"><span class="heading-rune">?</span><span>HOW TO PLAY</span></div><button class="window-close" data-close="helpWindow" aria-label="Close help">×</button></div>
+    <div class="help-content"><p>Welcome to Elderwood, a peaceful medieval RPG foundation inspired by the classic isometric worlds of the 1990s.</p><dl><dt>W A S D / Arrow keys</dt><dd>Walk through the forest</dd><dt>Click / tap the ground</dt><dd>Walk to that location</dd><dt>I / P</dt><dd>Backpack / paper doll</dd><dt>E</dt><dd>Open the cache when nearby</dd><dt>F / Space</dt><dd>Practice a weapon swing</dd><dt>Shift</dt><dd>Run</dd><dt>Escape</dt><dd>Close open panels</dd></dl><p>Equip from the backpack, remove items by clicking their paper-doll slots. Your outfit updates in the world immediately. Progress is saved in this browser.</p></div>
+  </div>
+
+  <div class="bottom-ui">
+    <div class="player-status"><div class="portrait-medallion">♙</div><div class="bars"><div class="status-name">THE WANDERER <span>LVL 1</span></div><div class="statbar health"><div style="width:100%"></div><span>100 / 100</span></div><div class="statbar stamina"><div id="staminaFill" style="width:100%"></div><span id="staminaText">100 / 100</span></div></div></div>
+    <div class="hotbar"><button class="hotbar-slot active" id="hotbarAttack" title="Practice attack (F)"><span class="hotbar-art">⚔</span><small>1</small></button><button class="hotbar-slot" id="hotbarCharacter" title="Character (P)"><span class="hotbar-art">♙</span><small>2</small></button><button class="hotbar-slot" id="hotbarBag" title="Backpack (I)"><span class="hotbar-art">▤</span><small>3</small></button><div class="hotbar-empty"><span>4</span></div><div class="hotbar-empty"><span>5</span></div></div>
+    <div class="time-indicator"><span>☼</span><div>EARLY MORNING<small>THE VALE · DAY 1</small></div></div>
+  </div>
+  <div class="desktop-guide">WASD to move <span>·</span> Click to travel <span>·</span> Shift to run</div>
+  <div id="mobileStick" class="mobile-stick"><div id="mobileStickKnob" class="mobile-stick-knob"></div></div>
+  <button id="mobileAttack" class="mobile-attack" aria-label="Swing weapon">⚔</button>
+</div>
+<script type="module" src="./src/game.js"></script>
+</body>
+</html>
