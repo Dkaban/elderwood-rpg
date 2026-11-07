@@ -41,7 +41,7 @@ function loadSave(){
   }catch{return structuredClone(defaultSave);}
 }
 const save=loadSave();
-const player={...save.player,direction:'south',moving:false,step:0,swingUntil:0,stamina:100,target:null,path:[]};
+const player={...save.player,direction:'south',moving:false,step:0,swingStart:0,swingUntil:0,stamina:100,target:null,path:[]};
 let viewport={w:0,h:0,dpr:1}, camera={x:player.x,y:player.y};
 let lastTime=performance.now(), frame=0, lastSaveTime=0;
 let inventoryFilter='all',toastTimer=null, panelOrder=20;
@@ -99,7 +99,7 @@ function renderEquipment(){
   el('armorValue').textContent=String(Object.values(save.equipment).reduce((sum,id)=>sum+(ITEM_DEFS[id]?.armor||0),0));
   dollCtx.clearRect(0,0,dollCanvas.width,dollCanvas.height);dollCtx.imageSmoothingEnabled=false;
   const img=sprites.character(save.equipment,'south');
-  dollCtx.drawImage(img,18,4,184,252);
+  dollCtx.drawImage(img,56,0,108,148,18,4,184,252); // Crop wide combat canvas to show the paper doll full size.
 }
 function sync(){renderInventory();renderEquipment();persist();}
 function equip(id){
@@ -128,7 +128,8 @@ function openChest(){
 }
 function attack(){
   const now=performance.now();if(player.swingUntil>now)return;
-  player.swingUntil=now+420;
+  player.swingStart=now;
+  player.swingUntil=now+360;
   if(!save.equipment.mainHand)toast('You practice an unarmed strike.');
   else toast(`You test the balance of your ${ITEM_DEFS[save.equipment.mainHand].name.toLowerCase()}.`);
 }
@@ -263,10 +264,12 @@ function drawActors(time){
     const {pt}=entity;
     if(entity.kind==='player'){
       ctx.fillStyle='rgba(7,18,14,.30)';ctx.beginPath();ctx.ellipse(pt.x,pt.y-3,20,8,0,0,Math.PI*2);ctx.fill();
-      const swinging=performance.now()<player.swingUntil;
+      const now=performance.now();
+      const swinging=now<player.swingUntil;
+      const swingPhase=swinging?Math.min(1,(now-player.swingStart)/(player.swingUntil-player.swingStart||1)):false;
       const walking=player.moving&&Math.floor(player.step)%2===1;
-      const sprite=sprites.character(save.equipment,player.direction,walking,swinging);
-      ctx.drawImage(sprite,Math.round(pt.x-54),Math.round(pt.y-136));
+      const sprite=sprites.character(save.equipment,player.direction,walking,swingPhase);
+      ctx.drawImage(sprite,Math.round(pt.x-sprite.width/2),Math.round(pt.y-136));
       // Subtle name plate improves legibility when surrounded by trees.
       ctx.font='600 10px "DM Sans",Arial';ctx.textAlign='center';
       ctx.fillStyle='rgba(7,23,17,.8)';ctx.fillText('THE WANDERER',pt.x+1,pt.y-136);
