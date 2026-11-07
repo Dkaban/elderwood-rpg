@@ -56,7 +56,16 @@
 
   <div id="helpWindow" class="rpg-window help-window hidden" role="dialog" aria-label="Game controls">
     <div class="window-heading"><div class="window-title"><span class="heading-rune">?</span><span>HOW TO PLAY</span></div><button class="window-close" data-close="helpWindow" aria-label="Close help">×</button></div>
-    <div class="help-content"><p>Welcome to Elderwood, a peaceful medieval RPG foundation inspired by the classic isometric worlds of the 1990s.</p><dl><dt>W A S D / Arrow keys</dt><dd>Walk through the forest</dd><dt>Click / tap the ground</dt><dd>Walk to that location</dd><dt>I / P</dt><dd>Backpack / paper doll</dd><dt>E</dt><dd>Open the cache when nearby</dd><dt>F / Space</dt><dd>Practice a weapon swing</dd><dt>Shift</dt><dd>Run</dd><dt>Escape</dt><dd>Close open panels</dd></dl><p>Equip from the backpack, remove items by clicking their paper-doll slots. Your outfit updates in the world immediately. Progress is saved in this browser.</p></div>
+    <div class="help-content"><p>Welcome to Elderwood, a peaceful medieval RPG foundation inspired by the classic isometric worlds of the 1990s.</p><dl><dt>W A S D / Arrow keys</dt><dd>Walk through the forest</dd><dt>Click / tap the ground</dt><dd>Walk to that location</dd><dt>I / P</dt><dd>Backpack / paper doll</dd><dt>E</dt><dd>Open the cache when nearby</dd><dt>F / Space</dt><dd>Swing toward the training dummy</dd><dt>F3</dt><dd>Open the debug menu</dd><dt>Shift</dt><dd>Run</dd><dt>Escape</dt><dd>Close open panels</dd></dl><p>Explore among peaceful deer, foxes, rabbits, squirrels, and birds. Try directional attacks against the straw training dummy near the starting clearing—damage numbers appear when you hit it.</p><p>Equip from the backpack, remove gear using the paper-doll slots. Your equipment and position save in this browser.</p><button id="btnDebugMenu" class="debug-open-button" type="button">⚙ Open debug menu (F3)</button></div>
+  </div>
+
+  <div id="debugWindow" class="rpg-window debug-window hidden" role="dialog" aria-label="Debug settings">
+    <div class="window-heading"><div class="window-title"><span class="heading-rune">⌗</span><span>DEBUG TOOLS</span></div><button class="window-close" data-close="debugWindow" aria-label="Close debug menu">×</button></div>
+    <div class="debug-content">
+      <label class="debug-option"><input id="debugCollisions" type="checkbox" /><span><strong>Show collision boxes</strong><small>Blocked tiles, character footprint, and dummy collision</small></span></label>
+      <label class="debug-option"><input id="debugAttacks" type="checkbox" /><span><strong>Show attack hitbox</strong><small>View the actual directional attack cone while swinging</small></span></label>
+      <p>F3 toggles this menu. Training dummy hits and wildlife remain visible with debug off.</p>
+    </div>
   </div>
 
   <div class="bottom-ui">
