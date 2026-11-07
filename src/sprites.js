@@ -56,8 +56,8 @@ function ground(kind, v=0) {
 }
 
 function tree(v=0) {
-  return stamp(192,190,2,(c)=>{
-    const ox=16, trunkX=32+ox;
+  return stamp(168,190,2,(c)=>{
+    const ox=10, trunkX=32+ox;
     ellipse(c,trunkX,86,25,6,'rgba(9,30,23,.25)');
     poly(c,[trunkX-5,85,trunkX-5,47,trunkX-8,40,trunkX-3,36,trunkX+2,55,trunkX+7,40,trunkX+11,43,trunkX+4,64,trunkX+4,85], '#493d31');
     rect(c,trunkX-2,49,3,33,'#6b5340'); rect(c,trunkX+1,58,1,23,'#9b7650');
@@ -66,7 +66,6 @@ function tree(v=0) {
     const mid=['#296446','#30714b','#376447'][v%3];
     const light=['#3d8053','#4d9160','#5f8551'][v%3];
     clusters.forEach(([x,y,rx,ry],i)=>{
-      x-=18; // Keep the entire crown centered over the trunk, without clipped edges.
       ellipse(c,trunkX+x, y+7, rx,ry,deep);
       ellipse(c,trunkX-3+x, y+3, rx-2,ry-2,mid);
       ellipse(c,trunkX-5+x,y,Math.max(4,rx-6),Math.max(4,ry-6), light);
@@ -175,8 +174,9 @@ function campfire(frame=0) {
     poly(c,[17,31,19,23,20,31],'#fff3a2');
   });
 }
-// Sword sweeps stay OUTSIDE the character in each screen-space facing direction.
-// The arc is shared by swords and staffs; the weapon artwork differs.
+// Four explicit, SCREEN-space attack arcs.  Angles use an upright sword as 0:
+// north sweeps across the space above the head, south below the boots,
+// east to the right, and west to the left.  Never swing through the player.
 const SWING_ARCS={
   north:{x:28,y:31,start:-.98,end:.98},
   south:{x:28,y:42,start:2.16,end:4.12},
@@ -185,8 +185,8 @@ const SWING_ARCS={
 };
 function drawHeldWeapon(c,direction,weaponId,swingPhase=false){
   if(!weaponId)return;
+  // Retain the original idle pose when not attacking.
   const back=direction==='north',left=direction==='west';
-  // Keep the existing idle weapon pose when an attack is not in progress.
   if(swingPhase===false){
     const x=back?43:left?9:44;
     if(weaponId==='oak-staff'){
@@ -204,16 +204,19 @@ function drawHeldWeapon(c,direction,weaponId,swingPhase=false){
   }
   const arc=SWING_ARCS[direction]||SWING_ARCS.south;
   const phase=Math.max(0,Math.min(1,swingPhase));
-  // A fast leading strike with a short recovery.
+  // Quick, decisive forward slash followed by a brief recovery.
   const progress=Math.max(0,Math.min(1,(phase-.07)/.8));
   const eased=1-Math.pow(1-progress,2);
   const angle=arc.start+(arc.end-arc.start)*eased;
   const staff=weaponId==='oak-staff';
-  if(progress>.03&&progress<1){
-    // The pale crescent is traced behind the sword tip, never across the torso.
+
+  // A luminous crescent follows the weapon TIP, outside the character's body.
+  // Its glow fades as the attack finishes, like a classic action-RPG swipe.
+  if(progress>.03 && progress<1){
     const from=Math.max(0,eased-.29);
     const strength=Math.min(1,progress*8)*Math.min(1,(1-phase)*5);
-    c.save();c.lineCap='round';c.lineJoin='round';
+    c.save();
+    c.lineCap='round';c.lineJoin='round';
     for(const [radius,width,color,opacity] of [
       [staff?30:29,4,staff?'#8fbb82':'#f4dd96',.42],
       [staff?28:27,2,staff?'#c6d9a0':'#fff6d3',.86]
@@ -228,7 +231,9 @@ function drawHeldWeapon(c,direction,weaponId,swingPhase=false){
     }
     c.restore();
   }
-  // Rotate the entire sword/staff around the hand, in the facing hemisphere.
+
+  // Rotate the WHOLE weapon around the hand.  Its blade always points out
+  // into the chosen facing hemisphere; no inward / self-crossing rotations.
   c.save();c.translate(arc.x,arc.y);c.rotate(angle);
   if(staff){
     poly(c,[-2,-29,1,-31,3,-26,2,11,-1,12],'#77583a');
@@ -242,15 +247,103 @@ function drawHeldWeapon(c,direction,weaponId,swingPhase=false){
     rect(c,-1,9,3,2,'#4f3729');
   }
   c.restore();
+  // A hand on the hilt makes the swipe read as a wielded weapon.
   ellipse(c,arc.x,arc.y,2.8,2.8,palette.skin);
+}
+
+function trainingDummy(hit=false){
+  return stamp(88,136,2,(c,w,h)=>{
+    const glow=hit?'#f8d99c':'#9e7850';
+    ellipse(c,22,63,18,5,'rgba(6,19,15,.34)');
+    rect(c,20,22,5,41,'#5d3a28');rect(c,22,23,2,38,'#9d7345');
+    rect(c,7,26,30,5,'#6b4830');rect(c,10,25,25,2,'#a77c4d');
+    // Straw-stuffed linen target with concentric painted rings.
+    poly(c,[14,18,30,18,36,30,32,48,14,48,9,31],'#745a3c');
+    poly(c,[14,16,30,16,35,30,30,46,14,46,10,30],glow);
+    ellipse(c,22,31,10,11,'#d7c29a');
+    ellipse(c,22,31,7,8,'#9b503e');
+    ellipse(c,22,31,4,5,'#d9bb72');
+    ellipse(c,22,31,2,3,hit?'#fff5cc':'#804733');
+    rect(c,12,40,4,3,'#866442');rect(c,30,40,4,3,'#866442');
+    // Binding ropes and sturdy legs.
+    rect(c,17,17,2,31,'#e6c58d');rect(c,29,17,2,31,'#e6c58d');
+    poly(c,[22,54,6,61,9,63,22,59,36,63,38,60],'#755039');
+    rect(c,18,5,8,14,'#7c5237');
+    rect(c,16,3,12,5,'#bea174');
+  });
+}
+
+function wildlifeSprite(type,frame=0,facing='right'){
+  const animated=frame%2===1;
+  return stamp(84,84,2,(c,w,h)=>{
+    if(facing==='left'){c.translate(w,0);c.scale(-1,1);}
+    const bounce=animated?1:0;
+    ellipse(c,21,36,17,4,'rgba(7,23,19,.24)');
+    if(type==='rabbit'){
+      const x=12,y=23-bounce;
+      ellipse(c,x+8,y+9,12,8,'#7c7565');
+      ellipse(c,x+8,y+7,10,6,'#bbb19b');
+      ellipse(c,x+1,y+11,4,5,'#e0d6bd');
+      ellipse(c,x+20,y+5,6,6,'#c8c3ae');
+      poly(c,[x+19,y+1,x+19,y-12,x+23,y-15,x+25,y+2],'#a69b84');
+      poly(c,[x+26,y+1,x+28,y-11,x+31,y-12,x+30,y+5],'#c7b69e');
+      rect(c,x+23,y+5,2,2,'#282c26');
+      rect(c,x+28,y+9,2,1,'#d4a49c');
+      rect(c,x+10,y+16,7,2,'#5c5b51');
+    }else if(type==='fox'){
+      const x=9,y=22-bounce;
+      poly(c,[x-8,y+7,x+2,y+1,x+15,y+6,x+16,y+14,x+4,y+15],'#a45636');
+      poly(c,[x-8,y+7,x-3,y+5,x+4,y+13,x-2,y+13],'#e0c6a0');
+      ellipse(c,x+16,y+7,11,7,'#c3763d');
+      poly(c,[x+21,y+5,x+20,y-4,x+26,y+1,x+30,y-3,x+33,y+9],'#b65a30');
+      poly(c,[x+22,y+8,x+34,y+8,x+29,y+14,x+22,y+13],'#d9bd90');
+      rect(c,x+26,y+7,2,2,'#302a22');
+      rect(c,x+33,y+11,2,2,'#342923');
+      rect(c,x+12,y+13,3,7,'#643c2b');rect(c,x+22,y+13,3,7,'#643c2b');
+    }else if(type==='deer'){
+      const x=9,y=14-bounce;
+      ellipse(c,x+13,y+15,13,7,'#916c4b');
+      poly(c,[x+20,y+13,x+25,y+1,x+31,y+4,x+29,y+17],'#96714f');
+      ellipse(c,x+29,y+6,6,5,'#b78a61');
+      poly(c,[x+25,y+4,x+22,y-4,x+20,y-10,x+22,y-10,x+27,y-3,x+29,y-10,x+31,y-9,x+28,y+4],'#6f5438');
+      poly(c,[x+31,y+4,x+34,y-7,x+37,y-9,x+36,y-2,x+35,y+5],'#765638');
+      rect(c,x+31,y+5,2,2,'#2c2e2a');
+      rect(c,x+8,y+21,3,14,'#654a37');rect(c,x+21,y+21,3,14,'#654a37');
+      rect(c,x+7,y+34,5,2,'#352f29');rect(c,x+20,y+34,5,2,'#352f29');
+      ellipse(c,x+4,y+12,4,3,'#d1bb9d');
+    }else if(type==='squirrel'){
+      const x=14,y=21-bounce;
+      ellipse(c,x-5,y+5,9,13,'#8c5337');
+      ellipse(c,x-9,y+2,6,8,'#bc7844');
+      ellipse(c,x+7,y+13,8,8,'#aa6841');
+      ellipse(c,x+12,y+5,5,6,'#b67b4f');
+      poly(c,[x+9,y+1,x+11,y-3,x+14,y+1],'#8b5139');
+      rect(c,x+13,y+5,2,2,'#1f2c24');
+      rect(c,x+8,y+17,4,4,'#754b35');
+      rect(c,x+13,y+16,5,3,'#754b35');
+      rect(c,x+11,y+10,3,6,'#e1bd84');
+    }else if(type==='bird'){
+      const x=14,y=27-bounce;
+      ellipse(c,x+5,y+5,8,5,'#6d8790');
+      ellipse(c,x+8,y+5+(animated?-2:1),5,3,'#92a6a0');
+      ellipse(c,x+13,y+2,4,4,'#7893a1');
+      poly(c,[x+17,y+3,x+22,y+5,x+17,y+6],'#c8a75e');
+      poly(c,[x-3,y+5,x-10,y+1,x-8,y+8,x-2,y+9],'#536c75');
+      rect(c,x+14,y+2,1,1,'#1a292c');
+      rect(c,x+5,y+10,1,5,'#b59a69');rect(c,x+10,y+10,1,5,'#b59a69');
+    }
+  });
 }
 
 function spriteCharacter(direction, equipment, step=false, swingPhase=false) {
   // Each combination is a real raster sprite; reuse until loadout or animation changes.
   return stamp(220,148,2,c=>{
-    // Transparent margins leave room for the full sword swipe.
-    c.save();c.translate(28,0);
+    c.save(); c.translate(28,0);
     const E=equipment, back=direction==='north';
+    const attacking=swingPhase!==false;
+    const strike=attacking?Math.sin(Math.PI*Math.max(0,Math.min(1,swingPhase))):0;
+    const side=direction==='west'?-1:direction==='east'?1:0;
+    const forward=direction==='north'?-1:direction==='south'?1:0;
     ellipse(c,27,69,13,4,'rgba(7,22,19,.24)');
     const bob=step?1:0;
     c.save();c.translate(0,bob);
@@ -260,22 +353,49 @@ function spriteCharacter(direction, equipment, step=false, swingPhase=false) {
       poly(c,[19,24,35,24,40,57,35,63,18,61,14,53],palette.cloak);
       poly(c,[19,27,21,58,17,59,15,52],palette.cloakLight);
     }
-    // Legs and boots
-    rect(c,19,44,9,16,leg?palette.pants:'#867b67');rect(c,29,44,8,16,leg?palette.pants:'#867b67');
-    rect(c,20,53,6,3,'#71685d');rect(c,30,53,5,3,'#71685d');
-    rect(c,17,59,12,7,shoes?palette.boots:'#776c58');rect(c,28,59,12,7,shoes?palette.boots:'#776c58');
-    rect(c,17,65,12,2,'#332e29');rect(c,28,65,12,2,'#332e29');
+    // Braced feet and a short forward step during the strike (not just a rotating sword).
+    const stepOut=Math.round(strike*3),leftStep=-side*stepOut,rightStep=side*stepOut;
+    rect(c,19+leftStep,44,9,16,leg?palette.pants:'#867b67');
+    rect(c,29+rightStep,44+forward*stepOut,8,16,leg?palette.pants:'#867b67');
+    rect(c,20+leftStep,53,6,3,'#71685d');rect(c,30+rightStep,53+forward*stepOut,5,3,'#71685d');
+    rect(c,17+leftStep,59,12,7,shoes?palette.boots:'#776c58');
+    rect(c,28+rightStep,59+forward*stepOut,12,7,shoes?palette.boots:'#776c58');
+    rect(c,17+leftStep,65,12,2,'#332e29');rect(c,28+rightStep,65+forward*stepOut,12,2,'#332e29');
+    // Rotate and lean the actual upper body with the weapon. Legs remain planted.
+    c.save();
+    c.translate(27,46);
+    c.rotate((side || (direction==='south'?1:-1))*.17*strike);
+    c.translate(-27,-46);
+    c.translate(side*3*strike,forward*3*strike);
     // Torso and leather vest
     const metal=E.chest==='iron-hauberk';
     poly(c,[18,24,36,24,40,33,38,48,18,48,14,34],metal?palette.ironShadow:shirt?palette.leather:palette.shirt);
     rect(c,19,26,3,19,metal?'#cad0c0':shirt?palette.leatherLight:'#f4dcae');rect(c,34,26,3,19,metal?'#657b7d':shirt?'#5a382c':'#c7b68f');
     if(metal){for(let i=0;i<5;i++){rect(c,23,29+i*3,10,1,i%2?'#819395':'#bdc8c0');}}
     rect(c,18,44,20,4,'#473b31');rect(c,25,44,6,4,palette.gold);rect(c,27,45,2,2,'#574530');
-    // Arms
-    rect(c,12,29,7,18,metal?palette.ironShadow:shirt?palette.leather:'#e3c795');
-    rect(c,38,29,7,18,metal?palette.ironShadow:shirt?palette.leather:'#e3c795');
-    rect(c,12,42,7,6,palette.skin);rect(c,38,42,7,6,palette.skin);
-    rect(c,13,32,4,8,shirt?palette.leatherLight:'#c4b58c');
+    // The attacking arm bends at the elbow and drives the blade across the swing.
+    const sleeve=metal?palette.ironShadow:shirt?palette.leather:'#e3c795';
+    const weaponArmLeft=direction==='west';
+    if(attacking){
+      const shoulderX=weaponArmLeft?16:41,shoulderY=31;
+      const hand=SWING_ARCS[direction]||SWING_ARCS.south;
+      const elbowX=(shoulderX+hand.x)/2+(weaponArmLeft?-5:5)*strike;
+      const elbowY=(shoulderY+hand.y)/2-5*strike;
+      c.save();c.lineCap='square';c.lineJoin='bevel';
+      c.strokeStyle=sleeve;c.lineWidth=8;
+      c.beginPath();c.moveTo(shoulderX,shoulderY);c.lineTo(elbowX,elbowY);c.stroke();
+      c.lineWidth=6;c.strokeStyle=palette.skin;
+      c.beginPath();c.moveTo(elbowX,elbowY);c.lineTo(hand.x,hand.y);c.stroke();
+      c.restore();
+      ellipse(c,hand.x,hand.y,3,3,palette.skinShade);
+      // The other arm stays lowered, holding the shield if one is equipped.
+      const otherX=weaponArmLeft?38:12;
+      rect(c,otherX,29,7,18,sleeve);rect(c,otherX,42,7,6,palette.skin);
+    }else{
+      rect(c,12,29,7,18,sleeve);rect(c,38,29,7,18,sleeve);
+      rect(c,12,42,7,6,palette.skin);rect(c,38,42,7,6,palette.skin);
+      rect(c,13,32,4,8,shirt?palette.leatherLight:'#c4b58c');
+    }
     // Neck, face, hair
     rect(c,23,19,10,10,palette.skinShade);
     rect(c,20,10,17,17,back?palette.hair:palette.skin);
@@ -303,8 +423,9 @@ function spriteCharacter(direction, equipment, step=false, swingPhase=false) {
       rect(c,sx+6,33,3,18,'#6f4830');rect(c,sx+3,39,10,3,'#d8be75');
     }
     if(E.mainHand) drawHeldWeapon(c, direction, E.mainHand, swingPhase);
-    c.restore();
-    c.restore(); // Undo wide-canvas centering.
+    c.restore(); // Upper-body lean.
+    c.restore(); // Walk-cycle bob.
+    c.restore(); // Wide-sprite offset.
   });
 }
 
@@ -323,7 +444,13 @@ export const sprites={
       else if(kind==='chest')worldSpriteCache[key]=chest(!!v);
       else if(kind==='sign')worldSpriteCache[key]=sign();
       else if(kind==='fire')worldSpriteCache[key]=campfire(v);
+      else if(kind==='dummy')worldSpriteCache[key]=trainingDummy(!!v);
     }
+    return worldSpriteCache[key];
+  },
+  wildlife(type,step=0,facing='right'){
+    const key=`wildlife:${type}:${step%2}:${facing}`;
+    if(!worldSpriteCache[key])worldSpriteCache[key]=wildlifeSprite(type,step,facing);
     return worldSpriteCache[key];
   },
   character(equipment,direction='south',step=false,swingPhase=false){
