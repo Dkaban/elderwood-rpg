@@ -175,55 +175,74 @@ function campfire(frame=0) {
     poly(c,[17,31,19,23,20,31],'#fff3a2');
   });
 }
-function drawHeldWeapon(c, direction, weaponId, swingPhase=false) {
+// Sword sweeps stay OUTSIDE the character in each screen-space facing direction.
+// The arc is shared by swords and staffs; the weapon artwork differs.
+const SWING_ARCS={
+  north:{x:28,y:31,start:-.98,end:.98},
+  south:{x:28,y:42,start:2.16,end:4.12},
+  east: {x:43,y:38,start:.52,end:2.62},
+  west: {x:14,y:38,start:-.52,end:-2.62}
+};
+function drawHeldWeapon(c,direction,weaponId,swingPhase=false){
   if(!weaponId)return;
-  const back=direction==='north', left=direction==='west', right=direction==='east';
-  const phase = swingPhase===false ? null : Math.max(0, Math.min(1, swingPhase));
-  if(weaponId==='oak-staff'){
-    const x = back?43:left?9:44;
-    if(phase===null){
+  const back=direction==='north',left=direction==='west';
+  // Keep the existing idle weapon pose when an attack is not in progress.
+  if(swingPhase===false){
+    const x=back?43:left?9:44;
+    if(weaponId==='oak-staff'){
       poly(c,[x,10,x+3,8,x+5,68,x+2,69],'#77583a');
       rect(c,x+1,12,2,45,'#bd9866');
       ellipse(c,x+2,9,3,4,'#5d855c');
-      return;
+    }else{
+      rect(c,x+1,15,3,45,'#7e6751');
+      poly(c,[x,31,x,8,x+2,2,x+5,8,x+5,31],palette.iron);
+      rect(c,x+1,8,1,22,'#edf1e2');
+      rect(c,x-6,31,17,4,'#c7a563');
+      rect(c,x+1,36,3,15,'#785032');
     }
-    const pivotX = x + (right?0:left?4:2);
-    const pivotY = 44;
-    const start = right? -1.15 : left? 1.15 : -0.95;
-    const end   = right?  0.55 : left?-0.55 :  0.95;
-    const angle = start + (end-start) * phase;
-    c.save();
-    c.translate(pivotX,pivotY);
-    c.rotate(angle);
-    rect(c,-1,-36,3,44,'#bd9866');
-    poly(c,[-2,-39,1,-41,3,-36,0,-35],'#77583a');
-    ellipse(c,0,-39,3,4,'#5d855c');
+    return;
+  }
+  const arc=SWING_ARCS[direction]||SWING_ARCS.south;
+  const phase=Math.max(0,Math.min(1,swingPhase));
+  // A fast leading strike with a short recovery.
+  const progress=Math.max(0,Math.min(1,(phase-.07)/.8));
+  const eased=1-Math.pow(1-progress,2);
+  const angle=arc.start+(arc.end-arc.start)*eased;
+  const staff=weaponId==='oak-staff';
+  if(progress>.03&&progress<1){
+    // The pale crescent is traced behind the sword tip, never across the torso.
+    const from=Math.max(0,eased-.29);
+    const strength=Math.min(1,progress*8)*Math.min(1,(1-phase)*5);
+    c.save();c.lineCap='round';c.lineJoin='round';
+    for(const [radius,width,color,opacity] of [
+      [staff?30:29,4,staff?'#8fbb82':'#f4dd96',.42],
+      [staff?28:27,2,staff?'#c6d9a0':'#fff6d3',.86]
+    ]){
+      c.beginPath();
+      for(let i=0;i<=12;i++){
+        const a=arc.start+(arc.end-arc.start)*(from+(eased-from)*i/12);
+        const sx=arc.x+Math.sin(a)*radius,sy=arc.y-Math.cos(a)*radius;
+        if(i===0)c.moveTo(sx,sy);else c.lineTo(sx,sy);
+      }
+      c.globalAlpha=strength*opacity;c.strokeStyle=color;c.lineWidth=width;c.stroke();
+    }
     c.restore();
-    return;
   }
-  const x = back?43:left?9:44;
-  if(phase===null){
-    rect(c,x+1,15,3,45,'#7e6751');
-    poly(c,[x,31,x,8,x+2,2,x+5,8,x+5,31],palette.iron);
-    rect(c,x+1,8,1,22,'#edf1e2');
-    rect(c,x-6,31,17,4,'#c7a563');
-    rect(c,x+1,36,3,15,'#785032');
-    return;
+  // Rotate the entire sword/staff around the hand, in the facing hemisphere.
+  c.save();c.translate(arc.x,arc.y);c.rotate(angle);
+  if(staff){
+    poly(c,[-2,-29,1,-31,3,-26,2,11,-1,12],'#77583a');
+    rect(c,-1,-26,2,33,'#bd9866');
+    ellipse(c,0,-29,3,3,'#5d855c');
+  }else{
+    poly(c,[-2,-5,-2,-24,0,-30,3,-24,3,-5],palette.iron);
+    rect(c,-1,-23,1,17,'#edf1e2');
+    rect(c,-7,-5,15,3,'#c7a563');
+    rect(c,-1,-2,3,12,'#785032');
+    rect(c,-1,9,3,2,'#4f3729');
   }
-  const pivotX = x + 2;
-  const pivotY = 33;
-  const start = back ? 2.35 : right ? -1.35 : left ? 1.35 : -1.9;
-  const end   = back ? 0.75 : right ?  0.35 : left ?-0.35 :  1.05;
-  const angle = start + (end-start) * phase;
-  c.save();
-  c.translate(pivotX,pivotY);
-  c.rotate(angle);
-  poly(c,[-2,-2,-2,-25,0,-31,3,-25,3,-2],palette.iron);
-  rect(c,-1,-24,1,18,'#edf1e2');
-  rect(c,-8,-2,16,4,'#c7a563');
-  rect(c,-1,2,3,15,'#785032');
-  rect(c,-1,15,3,2,'#4f3729');
   c.restore();
+  ellipse(c,arc.x,arc.y,2.8,2.8,palette.skin);
 }
 
 function spriteCharacter(direction, equipment, step=false, swingPhase=false) {
@@ -308,10 +327,10 @@ export const sprites={
     return worldSpriteCache[key];
   },
   character(equipment,direction='south',step=false,swingPhase=false){
-    const swingKey = swingPhase===false ? false : Math.max(0, Math.min(4, Math.round(swingPhase*4)));
+    const swingKey = swingPhase===false ? false : Math.max(0, Math.min(9, Math.round(swingPhase*9)));
     const key=JSON.stringify([equipment,direction,step,swingKey]);
     if(!worldSpriteCache[key]){
-      const drawPhase = swingKey===false ? false : swingKey/4;
+      const drawPhase = swingKey===false ? false : swingKey/9;
       worldSpriteCache[key]=spriteCharacter(direction,equipment,step,drawPhase);
     }
     return worldSpriteCache[key];
