@@ -21,6 +21,7 @@ const specials=[
   {kind:'sign',x:27,y:31,id:'sign'},
   {kind:'fire',x:26.9,y:26.5,id:'fire'},
   {kind:'rock',x:34,y:27.5,id:'rock'},
+  {kind:'dummy',x:30.3,y:30.3,id:'training-dummy'},
 ];
 
 export function createWorld(){
@@ -54,10 +55,16 @@ export function createWorld(){
     objects.push({kind:'rock',x:26.9+Math.cos(a)*.95,y:26.5+Math.sin(a)*.95,variant:0});
   }
   objects.sort((a,b)=>a.x+a.y-b.x-b.y);
-  const collides=(x,y)=>{
-    if(x<.4||y<.4||x>MAP_SIZE-.4||y>MAP_SIZE-.4)return true;
-    const cellX=Math.floor(x), cellY=Math.floor(y);
-    return obstacles.has(`${cellX},${cellY}`);
+  const dummy=specials.find(item=>item.kind==='dummy');
+  const collides=(x,y,radius=0)=>{
+    if(x-radius<.4||y-radius<.4||x+radius>MAP_SIZE-.4||y+radius>MAP_SIZE-.4)return true;
+    // Terrain tiles and trees have tile-sized footprints; test the player's radius against them.
+    for(let cy=Math.floor(y-radius);cy<=Math.floor(y+radius);cy++){
+      for(let cx=Math.floor(x-radius);cx<=Math.floor(x+radius);cx++){
+        if(obstacles.has(`${cx},${cy}`))return true;
+      }
+    }
+    return Math.hypot(x-dummy.x,y-dummy.y) < .43+radius;
   };
-  return {ground,objects,collides,specials};
+  return {ground,objects,obstacles,collides,specials,dummy};
 }
