@@ -7,13 +7,17 @@ Explore the quiet **Whispering Vale**, discover a supply cache, and outfit your 
 ## Features
 
 - Isometric forest with winding trails, trees, rocks, flowers, a campsite, and a hidden cache.
+- Peaceful, independently roaming rabbits, deer, foxes, squirrels, and birds.
+- A straw training dummy to practice directional attacks and see floating damage numbers.
+- Directional sword and staff swings with character-body motion, braced feet, and animated arms.
+- Toggleable collision and attack-hitbox visualization in the in-game debug menu (Help → Debug, or F3).
 - Sprite-based terrain, scenery, and characters built from original procedural pixel art.
 - WASD and arrow-key walking, click-to-move with obstacle-aware pathfinding, and Shift to run.
 - Character paper doll with seven equipment slots; wear and remove gear with a click, or drag inventory items onto slots.
 - Backpack with category filters, lootable equipment, stamina, armor statistic, and practice weapon swings.
 - Touch-friendly controls for mobile browsers, including a virtual joystick.
 - Automatic local save of equipment, chest loot, and player position.
-- No enemies yet. Combat, quests, and additional regions can be added later.
+- No hostile enemies yet. Combat, quests, and additional regions can be added later.
 
 ## Play
 
