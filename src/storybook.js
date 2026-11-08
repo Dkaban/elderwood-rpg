@@ -171,3 +171,170 @@ export function storySprite(kind,v=0){
  if(kind==='dummy')return dummy(v);
  return null;
 }
+
+function cloth(g,pts,color,outline='#493b30'){path(g,pts,color,outline,1.5);}
+function sword(g,x,y,a,staff=false){
+ g.save();g.translate(x,y);g.rotate(a);
+ if(staff){line(g,[[0,12],[0,-42]],'#67442c',6);line(g,[[0,-2],[0,-43]],'#c49e61',2);oval(g,0,-43,4,5,'#678658');}
+ else{
+  // Leather grip, crossguard and tapered iron blade.
+  line(g,[[0,12],[0,-7]],'#68452e',5);
+  line(g,[[-10,-8],[10,-8]],'#c5a368',4);
+  path(g,[[-3,-9],[-4,-32],[0,-48],[4,-32],[3,-9]],'#cad0ca','#647471',1);
+  line(g,[[0,-13],[0,-42]],'rgba(255,251,221,.89)',1.5);
+ }
+ g.restore();
+}
+const ATTACK={
+ north:{start:-2.7,end:-.35}, south:{start:.35,end:2.7},
+ east:{start:-1.15,end:1.15},west:{start:-2.0,end:-4.3}
+};
+export function storyCharacter(e,d='south',step=false,phase=false){
+ const {c,g}=surface(220,148),back=d==='north',left=d==='west',right=d==='east';
+ const running=step?1:0;
+ const active=phase!==false;
+ const p=active?Math.max(0,Math.min(1,phase)):0;
+ const strike=active?Math.sin(PI*p):0;
+ const side=left?-1:1,bodyX=110+(active?side*strike*1.6:0);
+ oval(g,110,136,26,6,'rgba(29,38,20,.23)');
+ g.save();g.translate(bodyX,step?Math.sin(running*PI)*1:0);
+ // A wind-swept lined cloak with an organic outline.
+ if(e.cloak){
+  cloth(g,[[-17,68],[-29,97],[-22,120],[-11,116],[1,120],[18,110],[20,84],[14,66]],'#754532','#453b2d');
+  cloth(g,[[-16,72],[-24,110],[-13,112],[-5,105],[9,112],[14,82]],'#985d3d','');
+  line(g,[[-10,71],[-16,101],[-11,112]],'rgba(215,163,103,.59)',1.3);
+ } else {
+  cloth(g,[[-15,66],[-14,101],[-1,106],[14,98],[15,69]],'#ae9b78','#6a5841');
+ }
+ // Shaded trousers and boots.
+ const trouser=e.legs?'#544d3d':'#85725a';
+ cloth(g,[[-13,99],[-12,119],[-5,123],[-1,103]],trouser);
+ cloth(g,[[1,102],[3,124],[12,121],[14,100]],trouser);
+ cloth(g,[[-14,118],[-17,133],[-3,134],[-2,122]],e.feet?'#614832':'#8d7252');
+ cloth(g,[[3,121],[3,134],[18,132],[13,119]],e.feet?'#614832':'#8d7252');
+ line(g,[[-17,130],[-3,132]],'#3a342c',2);line(g,[[3,133],[19,131]],'#3a342c',2);
+ // Torso: cream tunic with leather mail or shimmering metal.
+ const metal=e.chest==='iron-hauberk',vest=e.chest==='leather-vest';
+ const bod=metal?'#8c9990':vest?'#77533c':'#e1c69b';
+ cloth(g,[[-17,63],[-21,76],[-15,106],[14,106],[21,76],[14,62]],bod,'#5a4839');
+ if(metal){
+   for(let y=73;y<99;y+=6){line(g,[[-13,y],[12,y]],'rgba(213,214,190,.55)',2);for(let x=-11;x<14;x+=5)oval(g,x+(y%2)*.8,y+2,1,1,'#576b6b');}
+ }else if(vest){
+   cloth(g,[[-16,67],[-6,66],[-3,99],[-16,98]],'#9a714d','');
+   cloth(g,[[8,66],[16,68],[15,96],[5,100]],'#4e4133','');
+   line(g,[[-9,71],[8,98]],'#d6ad6a',1.6);
+ }else{
+   line(g,[[-8,69],[8,99]],'rgba(147,102,65,.55)',2);
+ }
+ line(g,[[-15,100],[15,100]],'#503e30',5);
+ oval(g,0,100,3,3,'#dfbb74');
+ // Legs and chest sit ahead of shield and cloak.
+ // Shoulders, arms and gripping hand follow the same strike trajectory as blade.
+ const sleeve=metal?'#748585':vest?'#795540':'#c3aa80';
+ let hand={x:right?20:-21,y:94},swordAngle=0;
+ if(active){
+   const ar=ATTACK[d]||ATTACK.south;
+   const u=Math.max(0,Math.min(1,(p-.1)/.63));const eased=u*u*(3-2*u);
+   swordAngle=ar.start+(ar.end-ar.start)*eased+PI/2;
+   hand={x:Math.cos(swordAngle-PI/2)*27,y:77+Math.sin(swordAngle-PI/2)*20};
+   const elbow={x:(hand.x+(side*14))*.5,y:(hand.y+72)*.5-3*strike};
+   line(g,[[side*16,72],[elbow.x,elbow.y]],sleeve,9);
+   line(g,[[elbow.x,elbow.y],[hand.x,hand.y]],'#caa67c',6);
+   oval(g,hand.x,hand.y,3.9,4,'#e7bf91');
+ }else{
+   cloth(g,[[right?-16:-20,69],[right?-25:-24,75],[-20,97],[-11,98],[-8,80]],sleeve,'');
+   cloth(g,[[right?14:12,69],[23,73],[24,96],[15,98],[10,81]],sleeve,'');
+   oval(g,right?21:-19,95,4,4,'#dab38b');
+ }
+ // Cloak pin, neck and face.
+ oval(g,0,65,7,6,'#d4aa78');
+ const face=grad(g,0,46,27,[[0,'#f3d6a1'],[.62,'#d8a97c'],[1,'#a97758']]);
+ oval(g,0,47,13,17,back?'#4c392d':face);
+ if(!back){
+  oval(g,left?-5:right?5:0,47,2.3,2.5,'rgba(170,103,69,.20)');
+  const eyeX=left?-7:right?6:5;oval(g,eyeX,47,1.2,1.5,'#44382c');
+  if(!left&&!right)oval(g,-5,47,1.2,1.5,'#44382c');
+ }
+ // Tossed hair with irregular locks.
+ if(e.head==='iron-helm'){
+  cloth(g,[[-15,44],[-14,33],[-7,27],[7,27],[14,33],[16,46]],'#8d9992','#52635d');
+  path(g,[[-13,38],[-8,31],[8,31],[13,38]],'#d0d2be');
+  line(g,[[1,28],[1,42]],'#66736d',2);
+ } else if(e.head==='wool-hood'){
+  cloth(g,[[-17,49],[-17,32],[-8,25],[10,24],[19,33],[18,51],[11,42],[10,36],[-9,35],[-11,49]],'#4d6548','#293d36');
+  line(g,[[-12,33],[-8,27],[8,27]],'#8f9866',2);
+ }else{
+  cloth(g,[[-13,40],[-16,34],[-9,28],[-4,31],[3,26],[7,30],[13,28],[14,40],[8,36],[4,34],[-4,38]],'#503729','#342a23');
+  for(let i=0;i<9;i++)line(g,[[-12+i*3,32],[-11+i*3,29-(i%3)*2]],i%2?'#7e5739':'#3a2d25',1.4);
+ }
+ // Shield: a decorated leather-and-iron heater.
+ if(e.offHand){
+  const sx=left?23:-25;
+  path(g,[[sx-10,77],[sx+12,75],[sx+11,96],[sx,110],[sx-10,96]],'#6c4b32','#cdb17a',2.5);
+  path(g,[[sx-7,80],[sx+8,79],[sx+8,96],[sx,105],[sx-7,94]],'#a07846');
+  line(g,[[sx,80],[sx,104]],'#ddbf78',2);
+ }
+ // Weapon is shown in the gripping hand, not hovering by the head.
+ if(e.mainHand){
+  if(active){
+    sword(g,hand.x,hand.y,swordAngle,e.mainHand==='oak-staff');
+    if(p>.22&&p<.74){
+      const ar=ATTACK[d]||ATTACK.south;const u=Math.min(1,(p-.1)/.63);
+      g.save();g.globalAlpha=.45*Math.sin(PI*(p-.22)/.52);g.beginPath();
+      const prev=Math.max(0,u-.2),st=ar.start+(ar.end-ar.start)*prev,ed=ar.start+(ar.end-ar.start)*u;
+      for(let i=0;i<=10;i++){const a=st+(ed-st)*i/10;const x=Math.cos(a)*53,y=76+Math.sin(a)*40;
+        i===0?g.moveTo(x,y):g.lineTo(x,y);}
+      g.strokeStyle='#f7e9b7';g.lineWidth=3;g.stroke();g.restore();
+    }
+  }else{sword(g,right?26:-25,92,0,e.mainHand==='oak-staff');}
+ }
+ g.restore();
+ return c;
+}
+export function storyAnimal(type,step=0,facing='right'){
+ const sizes={rabbit:[76,65],deer:[138,111],fox:[106,76],squirrel:[75,64],bird:[58,52]};
+ const [w,h]=sizes[type]||[70,60],{c,g}=surface(w,h);
+ const r=rng(type.length*23+step*13),flip=facing==='left';
+ g.save();if(flip){g.translate(w,0);g.scale(-1,1);}
+ oval(g,w*.5,h-8,w*.35,5,'rgba(30,37,23,.22)');
+ if(type==='deer'){
+  const x=w*.47;
+  // Spotted warm-brown deer with four articulated legs.
+  for(const xx of [x-25,x-5,x+13,x+30])line(g,[[xx,h-44],[xx+(xx<x?2:5),h-10]],'#876342',5);
+  oval(g,x,h-54,42,23,grad(g,x-12,h-63,52,[[0,'#d0a372'],[.5,'#a46c44'],[1,'#765036']]));
+  line(g,[[x+27,h-64],[x+46,h-88]],'#9f734f',14);
+  oval(g,x+51,h-88,13,11,'#b98b60');
+  dab(g,x+43,h-99,8,4,'#a27a5b',-.5);dab(g,x+62,h-100,8,4,'#a27a5b',.7);
+  oval(g,x+61,h-89,1.5,1.5,'#352d24');
+  for(let i=0;i<15;i++)oval(g,x-33+r()*65,h-64+r()*22,2.2,1.7,'rgba(243,217,169,.7)');
+  if(step===0){line(g,[[x+45,h-102],[x+41,h-112]],'#876c4c',2);}
+ } else if(type==='fox'){
+  oval(g,w*.67,h-24,29,17,'#b8703e');
+  path(g,[[40,h-24],[11,h-49],[9,h-30],[35,h-14]],'#c8814b');
+  path(g,[[10,h-48],[9,h-30],[22,h-24]],'#eee1b8');
+  for(const x of [52,78])line(g,[[x,h-23],[x,h-8]],'#543c2d',5);
+  path(g,[[74,h-37],[82,h-58],[91,h-49],[101,h-60],[103,h-35],[92,h-22]],'#be824b');
+  path(g,[[89,h-33],[104,h-30],[95,h-21],[84,h-27]],'#f0d6b5');
+  oval(g,98,h-43,1.5,1.5,'#352b25');
+ } else if(type==='rabbit'){
+  oval(g,35,43,23,15,grad(g,29,35,29,[[0,'#e0d5bd'],[.7,'#aa9b85'],[1,'#777667']]));
+  oval(g,52,39,13,12,'#c9bda7');
+  dab(g,51,15,4,19,'#beaf9a',-.12);dab(g,61,18,4,17,'#c5b4a3',.22);
+  line(g,[[52,10],[53,22]],'#dca6a2',2);
+  oval(g,62,38,1.4,1.4,'#493e38');
+  oval(g,10,41,7,8,'#eee2c8');oval(g,48,54,12,5,'#d9cbb3');
+ }else if(type==='squirrel'){
+  oval(g,37,40,16,13,'#a96c3f');oval(g,48,34,12,10,'#bb814e');
+  line(g,[[24,40],[12,17],[20,13],[27,27]],'#9a6037',12);
+  oval(g,52,32,2,2,'#322b23');
+  for(const x of [28,42])line(g,[[x,46],[x,56]],'#785039',3);
+ }else{
+  oval(g,27,32,15,10,'#6c86a0');oval(g,43,27,9,8,'#86a0ac');
+  path(g,[[19,32],[9,21],[28,28],[33,40]],'#4f6c8a');
+  path(g,[[49,28],[57,31],[49,34]],'#c6a25d');
+  oval(g,47,26,1.3,1.5,'#352f24');
+  line(g,[[31,40],[30,46]],'#6b5744',1.5);
+ }
+ g.restore();
+ return c;
+}
