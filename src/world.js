@@ -13,7 +13,7 @@ export function project(x,y) {return {x:(x-y)*TILE_W/2,y:(x+y)*TILE_H/2};}
 export function unproject(sx,sy) {return {x:sy/TILE_H+sx/TILE_W,y:sy/TILE_H-sx/TILE_W};}
 
 function pathX(y){return 29+4*Math.sin(y*.22)+2*Math.cos(y*.43);}
-function isGlade(x,y){return distance(x,y,29,29) < 5.25;}
+function isGlade(x,y){return distance(x,y,29,29) < 7;}
 function isPath(x,y){return Math.abs(x-pathX(y))<1.6 || (isGlade(x,y) && distance(x,y,29,29)>3.4 && hash(x,y,9)>.78);}
 function isWater(x,y){return x<10+2*Math.sin(y*.25) && x>7+2*Math.sin(y*.25);}
 const specials=[
@@ -35,23 +35,23 @@ export function createWorld(){
       if(isGlade(x,y)&&distance(x,y,29,29)<3) tile.kind='grass';
       row.push(tile);
       const r=hash(x,y,4), near=distance(x,y,29,29);
-      const valid=!path&&near>5.5&&!water&&x>1&&y>1&&x<MAP_SIZE-2&&y<MAP_SIZE-2;
+      const valid=!path&&near>7.2&&!water&&x>1&&y>1&&x<MAP_SIZE-2&&y<MAP_SIZE-2;
       if(water){ obstacles.add(`${x},${y}`);continue;}
-      if(valid && r<.18){
+      if(valid && r<.10){
         objects.push({kind:hash(x,y,17)<.28?'pine':'tree',x:x+.5,y:y+.5,variant:Math.floor(hash(x,y,15)*3)});
         obstacles.add(`${x},${y}`);
-      }else if(valid&&r<.214){
+      }else if(valid&&r<.123){
         objects.push({kind:'rock',x:x+.5,y:y+.5,variant:0});obstacles.add(`${x},${y}`);
-      }else if(r<.285 && !path && near>2){objects.push({kind:'shrub',x:x+.5,y:y+.5,variant:Math.floor(hash(x,y,7)*2)});}
-      else if(r<.36&&!water){objects.push({kind:'flower',x:x+.5,y:y+.5,variant:Math.floor(hash(x,y,7)*2)});}
-      else if(r<.367&&valid){objects.push({kind:'log',x:x+.5,y:y+.5,variant:0});}
+      }else if(r<.16 && !path && near>2){objects.push({kind:'shrub',x:x+.5,y:y+.5,variant:Math.floor(hash(x,y,7)*2)});}
+      else if(r<.21&&!water){objects.push({kind:'flower',x:x+.5,y:y+.5,variant:Math.floor(hash(x,y,7)*2)});}
+      else if(r<.218&&valid){objects.push({kind:'log',x:x+.5,y:y+.5,variant:0});}
     }
     ground.push(row);
   }
   for(const item of specials) objects.push({...item,variant:0});
   // Low stonework beside the fire suggests an old campsite.
-  for(let i=0;i<5;i++){
-    let a=i*Math.PI/2.5;
+  for(let i=0;i<3;i++){
+    let a=i*Math.PI*2/3;
     objects.push({kind:'rock',x:26.9+Math.cos(a)*.95,y:26.5+Math.sin(a)*.95,variant:0});
   }
   objects.sort((a,b)=>a.x+a.y-b.x-b.y);
