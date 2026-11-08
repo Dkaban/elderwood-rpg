@@ -1,7 +1,7 @@
-import {sprites} from './sprites.js';
-import {createWorld, project, unproject, MAP_SIZE, TILE_W, TILE_H, START} from './world.js';
-import {createWildlife, updateWildlife} from './wildlife.js';
-import {FACING, ATTACK_REACH, ATTACK_HALF_ANGLE, isInAttackArc} from './combat.js';
+import {sprites} from './sprites.js?v=quiet-20261108-r1';
+import {createWorld, project, unproject, MAP_SIZE, TILE_W, TILE_H, START} from './world.js?v=quiet-20261108-r1';
+import {createWildlife, updateWildlife} from './wildlife.js?v=quiet-20261108-r1';
+import {FACING, ATTACK_REACH, ATTACK_HALF_ANGLE, isInAttackArc} from './combat.js?v=quiet-20261108-r1';
 
 const el=id=>document.getElementById(id);
 const canvas=el('world'), ctx=canvas.getContext('2d',{alpha:false});
