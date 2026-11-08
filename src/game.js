@@ -103,9 +103,10 @@ function renderEquipment(){
     root.append(button);
   }
   el('armorValue').textContent=String(Object.values(save.equipment).reduce((sum,id)=>sum+(ITEM_DEFS[id]?.armor||0),0));
-  dollCtx.clearRect(0,0,dollCanvas.width,dollCanvas.height);dollCtx.imageSmoothingEnabled=false;
+  dollCtx.clearRect(0,0,dollCanvas.width,dollCanvas.height);dollCtx.imageSmoothingEnabled=true;
   const img=sprites.character(save.equipment,'south');
-  dollCtx.drawImage(img,18,4,184,252);
+  // Crop the wide combat sprite to the standing figure before painting the paper doll.
+  dollCtx.drawImage(img,65,8,90,140,39,12,142,252);
 }
 function sync(){renderInventory();renderEquipment();persist();}
 function equip(id){
@@ -388,10 +389,30 @@ function drawFireflies(time){
   }
 }
 function rhash(n){let s=Math.sin(n*97.72+22)*45636;return s-Math.floor(s);}
+// Diffuse morning light filters between the forest canopy and meadow.
+function drawStorybookLight(time){
+  const center=screenPoint(29,29);
+  ctx.save();
+  const halo=ctx.createRadialGradient(center.x-120,center.y-180,8,center.x-30,center.y-70,Math.max(420,viewport.w*.48));
+  halo.addColorStop(0,'rgba(255,240,174,.20)');
+  halo.addColorStop(.40,'rgba(248,223,148,.10)');
+  halo.addColorStop(1,'rgba(248,223,148,0)');
+  ctx.fillStyle=halo;ctx.fillRect(0,0,viewport.w,viewport.h);
+  ctx.globalAlpha=.05+Math.sin(time/4500)*.012;
+  ctx.fillStyle='#ffe4a1';
+  for(let i=0;i<3;i++){
+    const ox=center.x-260+i*190,oy=center.y-310-i*58;
+    ctx.beginPath();
+    ctx.moveTo(ox,oy);ctx.lineTo(ox+44,oy);
+    ctx.lineTo(ox+220,oy+570);ctx.lineTo(ox+114,oy+570);
+    ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+}
 function render(t){
   const dt=Math.min((t-lastTime)/1000,.05);lastTime=t;
-  update(dt,t);ctx.imageSmoothingEnabled=false;
-  drawGround();drawActors(t);drawDebug(t);drawDamageNumbers(t);drawFireflies(t);
+  update(dt,t);ctx.imageSmoothingEnabled=true;
+  drawGround();drawStorybookLight(t);drawActors(t);drawDebug(t);drawDamageNumbers(t);drawFireflies(t);
   requestAnimationFrame(render);
 }
 function resize(){
