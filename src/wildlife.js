@@ -19,14 +19,13 @@ export function createWildlife(world){
   const animals=[];
   // Guarantee a few animals around the starting clearing so the world feels alive immediately.
   for(const [type,x,y] of [
-    ['rabbit',27.3,28.1],['deer',32.0,28.9],['fox',26.2,30.8],
-    ['squirrel',31.6,26.5],['bird',25.2,29.8],['rabbit',33.0,31.4]
+    ['rabbit',27.3,28.1],['deer',32.0,28.9],['fox',26.2,30.8],['bird',25.2,29.8]
   ]) {
     if(!world.collides(x,y,.2))animals.push(animal(type,x,y,animals.length+1));
   }
   // Deterministic random distribution; does not change every page load.
   for(let y=4;y<MAP_SIZE-4;y+=3)for(let x=4;x<MAP_SIZE-4;x+=3){
-    if(hash(x,y,77)>.16)continue;
+    if(hash(x,y,77)>.11)continue;
     const px=x+.25+hash(x,y,19)*1.5,py=y+.25+hash(x,y,20)*1.5;
     if(Math.hypot(px-29,py-29)<6.5||world.collides(px,py,.22))continue;
     const choice=Math.floor(hash(x,y,21)*SPECIES.length);
