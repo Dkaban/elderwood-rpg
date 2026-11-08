@@ -1,4 +1,4 @@
-import {hash,MAP_SIZE} from './world.js';
+import {hash,MAP_SIZE} from './world.js?v=quiet-20261108-r1';
 
 const SPECIES=['rabbit','rabbit','deer','fox','squirrel','bird'];
 const SPEED={rabbit:1.12,deer:.94,fox:1.20,squirrel:1.25,bird:1.16};
