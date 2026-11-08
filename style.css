@@ -43,3 +43,75 @@ button{font:inherit;cursor:pointer;color:inherit} button:focus-visible{outline:2
 .debug-option small{font-size:10px;color:#a5b9a6;line-height:1.4}
 .debug-content p{color:#97aa96;font-size:10px;line-height:1.6;margin:14px 5px 0}
 @media(max-width:820px){.debug-window{top:73px;right:9px;max-height:calc(100dvh - 170px);overflow:auto}}
+
+
+/* ================================================================
+   STORYBOOK ART DIRECTION — parchment, moss, honeyed sun and linen.
+   Keeps all existing panel positions and mobile controls functional.
+   ================================================================ */
+:root {color-scheme:light;--ink:#473a29;--muted:#8e7655;--green:#557247;--frame:#af895c;--gold:#d6ad68;--shadow:#473c2b;}
+html,body{background:#344f3c;color:#f4e9cb}
+#world{filter:saturate(1.12) contrast(1.025)}
+.screen-edges{background:radial-gradient(ellipse at 50% 44%,transparent 49%,rgba(16,36,27,.17) 83%,rgba(12,28,25,.45) 100%);pointer-events:none}
+.topbar{background:linear-gradient(180deg,rgba(24,42,31,.72),rgba(32,50,35,.24) 76%,transparent);padding-top:15px}
+.game-brand strong{font-family:'Cinzel',Georgia,serif;color:#fae7bd;text-shadow:0 3px 11px #182f26;font-size:29px;letter-spacing:3px}
+.brand-eyebrow{color:#f7e0a5;letter-spacing:2.2px}
+.emblem{border-color:#edd398;color:#f9df9b;background:rgba(33,54,37,.42);box-shadow:0 0 0 3px rgba(236,204,143,.11)}
+.chapter-pill,.location-pill{background:linear-gradient(125deg,rgba(249,228,187,.97),rgba(219,186,128,.96));color:#533c29;border:1px solid #b58d58;box-shadow:0 3px 16px rgba(38,38,23,.23),inset 0 1px rgba(255,249,218,.6);text-shadow:none}
+.chapter-pill b,.chapter-symbol,.location-pin{color:#906037}
+.location-safe{color:#4b6d45;border-left-color:#b89e70;font-weight:700}
+.top-action{background:linear-gradient(135deg,rgba(59,66,39,.87),rgba(35,52,42,.88));border:1px solid #c8a86d;color:#f9e4b4;box-shadow:inset 0 1px rgba(255,255,225,.15)}
+.top-action:hover,.top-action.active{background:linear-gradient(135deg,#6a7350,#3e5e47);border-color:#f1ce8a}
+.rpg-window{color:#473424;border:2px solid #a47b4b;border-radius:3px;padding:7px;background:linear-gradient(137deg,rgba(249,230,194,.97),rgba(226,198,152,.98) 64%,rgba(211,176,119,.98));box-shadow:0 13px 44px rgba(27,26,17,.46),inset 0 0 0 3px rgba(244,223,179,.82),inset 0 0 0 5px rgba(157,114,63,.38);backdrop-filter:blur(10px)}
+.rpg-window::before,.rpg-window::after{color:#795b37}
+.window-heading{background:linear-gradient(90deg,rgba(211,179,127,.63),rgba(252,238,200,.45));border-bottom:1px solid #b39060;border-radius:2px}
+.window-title,.character-name strong{color:#60452f}
+.window-close{background:rgba(125,84,50,.13);color:#60432b;border-color:#b99765}
+.window-close:hover{background:rgba(140,77,40,.25)}
+.character-name{border-bottom-color:rgba(138,100,52,.36)}
+.character-name small,.panel-hint{color:#856948}
+.character-icon{color:#9e784b}
+.level-gem{border-color:#ad8554;color:#6e5133}
+.doll-wrap{background:radial-gradient(ellipse at 51% 42%,rgba(255,248,220,.84),rgba(237,212,168,.62) 56%,rgba(180,146,103,.18)),repeating-linear-gradient(90deg,transparent 0 25px,rgba(120,93,55,.035) 25px 26px);border:1px solid rgba(145,103,59,.36)}
+.doll-engraving{color:rgba(149,109,58,.43)}
+#paperDoll{image-rendering:auto}
+.equip-slot{background:linear-gradient(145deg,#f3dba9,#cfaa71);border:1px solid #ad8353;color:#694b2f;border-radius:3px;box-shadow:inset 0 1px rgba(255,247,214,.5)}
+.equip-slot:hover{background:#ead19d;border-color:#714f34}
+.equip-slot.filled{border-color:#986942;box-shadow:inset 0 0 14px rgba(138,102,53,.18)}
+.equip-slot .slot-art{color:#765331}
+.character-stats>div{background:rgba(248,232,195,.48);border-color:#ae8759;color:#5d4832}
+.character-stats strong{color:#624936}
+.inventory-intro,.inventory-footer{color:#6b5237}
+.inventory-intro small,.inventory-intro strong,.gold-amount,.gold-amount small{color:#705134}
+.inventory-tabs{border-bottom-color:rgba(156,111,62,.39)}
+.inventory-tabs button{color:#7b664c;background:rgba(255,247,217,.22)}
+.inventory-tabs button.selected{color:#563c25;border-color:#99683b;background:rgba(255,246,205,.62)}
+.inventory-items{background:rgba(250,238,206,.18)}
+.item-row{border-color:rgba(141,111,65,.4);background:linear-gradient(90deg,rgba(255,247,217,.51),rgba(234,209,162,.47));color:#5b402c}
+.item-row:hover{background:rgba(255,246,211,.8);border-color:#ae8049}
+.item-desc strong{color:#58412c}.item-desc span{color:#917453}.item-chevron{color:#916a3e}
+.item-icon{color:#a9783d;background:rgba(226,193,139,.52);border-color:rgba(164,115,62,.32)}
+.gold-amount span{color:#b18335}
+.loot-story,.empty-bag,.help-content,.help-content dl,.debug-content,.debug-content p{color:#684c34}
+.help-content dt,.debug-option strong{color:#57402b}
+.help-content dd,.debug-option small{color:#806649}
+.debug-option{background:rgba(251,234,199,.54);border-color:#b58f63}
+.debug-open-button{background:linear-gradient(100deg,#765538,#a67c4c);color:#f9e6bd}
+.interaction,.toast{background:rgba(244,218,171,.97);border:1px solid #996d40;color:#5c422b;box-shadow:0 6px 22px #1d30254a}
+.hotbar-slot,.hotbar-empty{background:linear-gradient(155deg,#70563c,#362f2b);border:2px solid #c4a06b;box-shadow:0 4px 12px rgba(15,34,24,.33),inset 0 0 0 2px rgba(240,215,157,.21);border-radius:5px}
+.hotbar-slot.active,.hotbar-slot:hover{border-color:#ffe0a0;background:linear-gradient(140deg,#94704e,#493c2c)}
+.hotbar-art{color:#ffe1a4}.hotbar-slot small,.hotbar-empty span{color:#f3e5c2}
+.portrait-medallion{background:radial-gradient(circle at 45% 35%,#b9915d,#674936 70%,#302a29);border:3px double #e7c78a;box-shadow:0 3px 20px #142c21b3;color:#f5dca1}
+.statbar{border:2px solid #b79766;background:#392f2a;box-shadow:0 2px 8px #1a282084}
+.statbar.health>div{background:linear-gradient(90deg,#bd5d48,#df7a65)}
+.statbar.stamina>div{background:linear-gradient(90deg,#63835a,#a0b074)}
+.status-name{color:#f3e0b8;text-shadow:0 2px 7px #183022}
+.location-pill{border-left:3px solid #ba884c}
+.mobile-stick{border-color:rgba(241,214,148,.8);background:radial-gradient(circle,rgba(246,225,171,.26),rgba(42,58,38,.64))}
+.mobile-attack{border-color:#f0d4a0;background:linear-gradient(135deg,rgba(73,80,51,.87),rgba(38,56,45,.88));color:#f8e1ae}
+@media(max-width:820px){
+ .game-brand strong{font-size:18px}
+ .topbar{padding:10px}
+ .location-pill{top:76px}
+ .rpg-window{box-shadow:0 10px 37px rgba(23,30,20,.6),inset 0 0 0 3px #f3ddb1}
+}
