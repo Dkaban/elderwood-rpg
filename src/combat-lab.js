@@ -15,7 +15,7 @@ const dirs=['south','west','north','east'];
 const colors={grass:'#71965d',shadow:'#365541',gold:'#eac78b',ink:'#29362a'};
 const state={
   player:{x:0,y:0,facing:'east',mode:'idle',elapsed:0,walkElapsed:0,attackId:0,hitDone:false,queued:false,target:null},
-  dummy:{x:147,y:-14,radius:28,hp:100,max:100,flash:0,stagger:0,reset:0,hitCount:0},
+  dummy:{x:115,y:-14,radius:28,hp:100,max:100,flash:0,stagger:0,reset:0,hitCount:0},
   debug:{open:false,hurtbox:false,hitbox:true,collision:false,facing:false,stats:true},
   config:{...CONFIG}, numbers:[], particles:[], keys:new Set(), last:0, now:0, hitStop:0,
   view:{w:0,h:0,dpr:1,scale:1,cameraX:0,cameraY:0}, joystick:{id:null,x:0,y:0},
@@ -52,7 +52,8 @@ function ground(){
   const y0=((camera.y%step)+step)%step-step;
   for(let y=y0,yi=0;y<view.h+step;y+=step,yi++)
    for(let x=x0,xi=0;x<view.w+step;x+=step,xi++){
-    const seed=(xi*23+yi*47+Math.floor(view.cameraX/84)*13+Math.floor(view.cameraY/84)*29);
+    const cellX=Math.floor((x-camera.x)/step),cellY=Math.floor((y-camera.y)/step);
+    const seed=cellX*23+cellY*47;
     ctx.fillStyle=((seed*7)%5<2)?'rgba(232,221,140,.045)':'rgba(21,68,41,.055)';
     ctx.beginPath();ctx.ellipse(x+28*view.scale,y+35*view.scale,34*view.scale,25*view.scale,0,0,Math.PI*2);ctx.fill();
    }
