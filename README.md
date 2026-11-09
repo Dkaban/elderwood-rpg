@@ -8,4 +8,4 @@ A single-player medieval fantasy RPG prototype for the browser.
 
 The earlier exploration prototype remains accessible as [Legacy Preview](https://dkaban.github.io/elderwood-rpg/legacy.html).
 
-Built with HTML, CSS, JavaScript, and original vector sprites. No account or installation required.
+Built with HTML, CSS, JavaScript, and original illustrated sprite artwork. Combat Lab now uses the approved directional sword frames. No account or installation required.
