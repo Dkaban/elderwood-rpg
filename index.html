@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#425c46">
   <meta name="description" content="Elderwood Combat Lab — a focused, single-player medieval sword-fighting prototype.">
-  <meta name="elderwood-build" content="combat-lab-2">
+  <meta name="elderwood-build" content="combat-lab-3">
   <title>Elderwood — Combat Lab</title>
-  <link rel="stylesheet" href="./combat-lab.css?v=combat-lab-2">
+  <link rel="stylesheet" href="./combat-lab.css?v=combat-lab-3">
 </head>
 <body>
   <main class="game" aria-label="Elderwood combat training meadow">
@@ -58,6 +58,25 @@
       </div>
     </aside>
   </main>
-  <script type="module" src="./src/combat-lab.js?v=combat-lab-2"></script>
+    <div id="runtimeWarning" hidden role="alert" style="position:absolute;z-index:15;top:47%;left:50%;transform:translate(-50%,-50%);width:min(88vw,380px);padding:17px;border:1px solid #d2ab70;border-radius:7px;color:#fff4d5;background:#253c31;box-shadow:0 12px 36px #10231f9c;text-align:center;font:14px/1.55 system-ui">The combat game failed to start. Refresh this page to retry. If it stays blank, please share this message.</div>
+    <script>
+      (function(){
+        function showError(message){
+          if(window.__elderwoodRunning)return;
+          var node=document.getElementById('runtimeWarning');
+          if(!node)return;
+          node.textContent='Elderwood could not start: '+message;
+          node.hidden=false;
+        }
+        window.addEventListener('error',function(event){
+          if(!window.__elderwoodRunning)showError((event.message||'a game script failed to load').slice(0,180));
+        },true);
+        window.addEventListener('unhandledrejection',function(event){
+          if(!window.__elderwoodRunning)showError(String(event.reason||'a game module failed').slice(0,180));
+        });
+        setTimeout(function(){if(!window.__elderwoodRunning)showError('the game did not finish loading. Try refreshing.');},5000);
+      })();
+    </script>
+  <script type="module" src="./src/combat-lab.js?v=combat-lab-3"></script>
 </body>
 </html>
