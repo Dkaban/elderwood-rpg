@@ -1,17 +1,17 @@
 // Elderwood Combat Lab — stand-alone browser sandbox.
 // This deliberately does not depend on the older exploration engine.
-import { CONFIG, frameAt, facingVector, hitsDummy, attackPhase } from './combat-data.js';
+import { CONFIG, SPRITE_SHEET, frameAt, attackFrame, facingVector, hitsDummy, attackPhase } from './combat-data.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('arena');
 const ctx = canvas.getContext('2d', {alpha:false});
 const sprites = new Image();
-sprites.src = './assets/hero-sheet.svg?v=combat-lab-1';
+sprites.src = SPRITE_SHEET.src;
 let artReady = false;
-sprites.onload = () => {artReady=true; $('assetStatus').textContent='72 sprite frames loaded';};
+sprites.onload = () => {artReady=true; $('assetStatus').textContent='Illustrated attacks loaded · 4 directions';};
 sprites.onerror = () => {artReady=false; $('assetStatus').textContent='Sprite sheet failed to load';};
 
-const dirs=['south','west','north','east'];
+const dirs=['south','east','north','west'];
 const colors={grass:'#71965d',shadow:'#365541',gold:'#eac78b',ink:'#29362a'};
 const state={
   player:{x:0,y:0,facing:'east',mode:'idle',elapsed:0,walkElapsed:0,attackId:0,hitDone:false,queued:false,target:null},
@@ -32,7 +32,7 @@ function resize(){
   canvas.width=Math.round(view.w*view.dpr);
   canvas.height=Math.round(view.h*view.dpr);
   // Maintain legible, human-sized sprites in portrait, not tiny zoomed-out characters.
-  view.scale= view.w<600 ? .98 : 1.22;
+  view.scale= view.w<600 ? 1.06 : 1.22;
   ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
 }
 function worldToScreen(x,y){
@@ -105,21 +105,27 @@ function drawDummy(){
 }
 function playerFrame(){
   if(player.mode==='attack'){
-    const phase=attackPhase(player.elapsed,state.config);
-    const sequence= phase==='windup'?Math.min(2,Math.floor(player.elapsed/state.config.windup*3))
-      :phase==='active'?3+Math.min(2,Math.floor((player.elapsed-state.config.windup)/state.config.active*3))
-      :Math.min(7,6+Math.floor((player.elapsed-state.config.windup-state.config.active)/state.config.recovery*2));
-    return {col:sequence,row:dirs.indexOf(player.facing),index:sequence};
+    const index=attackFrame(player.elapsed,state.config);
+    return {...frameAt(player.facing,'attack',index),index};
   }
-  if(player.mode==='walk'){const i=Math.floor(player.walkElapsed/95)%6;return {col:8+i,row:dirs.indexOf(player.facing),index:i};}
-  const i=Math.floor(state.now/240)%4;return {col:14+i,row:dirs.indexOf(player.facing),index:i};
+  // No fabricated walking frames: the supplied sheet contains attack poses.
+  // Hold the clean guard pose while moving, rather than cycling swing frames.
+  return {...frameAt(player.facing,'idle',0),index:0};
 }
 function drawPlayer(){
   const p=worldToScreen(player.x,player.y),sc=view.scale;
-  const index=playerFrame();
+  const f=playerFrame();
   if(artReady){
-    ctx.drawImage(sprites,index.col*144,index.row*160,144,160,p.x-72*sc,p.y-146*sc,144*sc,160*sc);
-  }else {
+    // Frame cell has transparent margins. Anchor the character's feet to world space.
+    const w=f.width*sc,h=f.height*sc,x=p.x-w/2,y=p.y-h*.86;
+    ctx.save();
+    if(f.flipX){
+      ctx.translate(p.x*2,0);
+      ctx.scale(-1,1);
+    }
+    ctx.drawImage(sprites,f.x,f.y,f.width,f.height,x,y,w,h);
+    ctx.restore();
+  }else{
     ctx.fillStyle='#efe0bd';ctx.strokeStyle='#7c4a38';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(p.x,p.y-74*sc,15*sc,0,Math.PI*2);ctx.fill();ctx.stroke();
     ctx.fillStyle='#794837';ctx.fillRect(p.x-18*sc,p.y-52*sc,36*sc,46*sc);
@@ -128,7 +134,7 @@ function drawPlayer(){
 function debugWorld(){
   const p=worldToScreen(player.x,player.y),d=worldToScreen(dummy.x,dummy.y),sc=view.scale;
   if(state.debug.hurtbox||state.debug.collision){
-    ctx.strokeStyle='#62e1bf';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y-12*sc,CONFIG.playerRadius*sc,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#62e1bf';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y-12*sc,state.config.playerRadius*sc,0,Math.PI*2);ctx.stroke();
     ctx.strokeStyle='#ee9878';ctx.beginPath();ctx.arc(d.x,d.y-12*sc,dummy.radius*sc,0,Math.PI*2);ctx.stroke();
   }
   const attacking=player.mode==='attack'&&attackPhase(player.elapsed,state.config)==='active';
@@ -138,7 +144,7 @@ function debugWorld(){
     ctx.beginPath();ctx.moveTo(p.x,p.y-28*sc);
     ctx.arc(p.x,p.y-28*sc,state.config.reach*sc,angle-half,angle+half);
     ctx.closePath();
-    ctx.fillStyle=attacking?'rgba(245,204,92,.31)':'rgba(237,196,111,.07)';ctx.fill();
+    ctx.fillStyle=attacking?'rgba(245,204,92,.24)':'rgba(237,196,111,.04)';ctx.fill();
     ctx.strokeStyle=attacking?'#fbe19e':'rgba(251,225,158,.35)';ctx.lineWidth=2;ctx.stroke();
   }
   if(state.debug.facing){
@@ -172,7 +178,7 @@ function strikeCheck(){
   if(!hitsDummy(player,dummy,state.config))return;
   const damage=8+((player.attackId*7)%8);
   state.lastSwingDamage=damage;
-  dummy.hp=Math.max(0,dummy.hp-damage);dummy.hitCount++;dummy.flash=.17;dummy.stagger=.25;
+  dummy.hp=Math.max(0,dummy.hp-damage);dummy.hitCount++;dummy.flash=.13;dummy.stagger=.19;
   state.hitStop=state.config.hitstop/1000;
   state.numbers.push({x:dummy.x,y:dummy.y-15,life:.8,value:damage});
   $('dummyHP').textContent=dummy.hp+' / '+dummy.max;
@@ -184,7 +190,7 @@ function strikeCheck(){
 function attack(){
   if(player.mode==='attack'){
     const total=state.config.windup+state.config.active+state.config.recovery;
-    if(player.elapsed>total-130)player.queued=true;
+    if(player.elapsed>total-160)player.queued=true;
     return;
   }
   player.mode='attack';player.elapsed=0;player.hitDone=false;player.queued=false;
@@ -212,7 +218,7 @@ function movement(dt){
     const speed=state.keys.has('shift')?state.config.speed*1.35:state.config.speed;
     const nx=clamp(player.x+vx*speed*dt,-420,420),ny=clamp(player.y+vy*speed*dt,-300,300);
     // Training dummy has a physical collision circle, with normal slide behavior.
-    const stop=dummy.radius+CONFIG.playerRadius+4;
+    const stop=dummy.radius+state.config.playerRadius+4;
     if(length(nx-dummy.x,ny-dummy.y)>stop){player.x=nx;player.y=ny;}
     else if(length(nx-dummy.x,player.y-dummy.y)>stop)player.x=nx;
     else if(length(player.x-dummy.x,ny-dummy.y)>stop)player.y=ny;
@@ -227,7 +233,7 @@ function update(dt){
   if(player.mode==='attack'){
     const was=player.elapsed;player.elapsed+=dt*1000;
     const onset=state.config.windup;
-    if(!player.hitDone && was<=onset && player.elapsed>=onset)strikeCheck();
+    if(!player.hitDone && was<onset && player.elapsed>=onset)strikeCheck();
     const total=state.config.windup+state.config.active+state.config.recovery;
     if(player.elapsed>=total){
       const queued=player.queued;player.mode='idle';player.elapsed=0;player.queued=false;
@@ -252,7 +258,7 @@ function draw(now){
   if(state.debug.stats){
     const f=playerFrame(),mode=player.mode==='attack'?attackPhase(player.elapsed,state.config):player.mode;
     $('stateReadout').textContent=mode;
-    $('frameReadout').textContent=(f.index+1)+' / '+(player.mode==='attack'?8:player.mode==='walk'?6:4);
+    $('frameReadout').textContent=(f.index+1)+' / '+(player.mode==='attack'?8:1);
     $('facingReadout').textContent=player.facing;
     $('phaseReadout').textContent=player.mode==='attack'?Math.round(player.elapsed)+'ms':'—';
   }
