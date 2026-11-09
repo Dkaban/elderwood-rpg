@@ -1,6 +1,6 @@
 // Elderwood Combat Lab — stand-alone browser sandbox.
 // This deliberately does not depend on the older exploration engine.
-import { CONFIG, SPRITE_SHEET, frameAt, attackFrame, facingVector, hitsDummy, attackPhase } from './combat-data.js';
+import { CONFIG, SPRITE_SHEET, frameAt, attackFrame, facingVector, hitsDummy, attackPhase } from './combat-data.js?v=combat-lab-3';
 
 const $ = id => document.getElementById(id);
 const canvas = $('arena');
@@ -255,6 +255,7 @@ function draw(now){
   update(dt);
   ctx.setTransform(view.dpr,0,0,view.dpr,0,0);ctx.imageSmoothingEnabled=true;
   ground();drawDummy();drawPlayer();debugWorld();floatingText(dt);
+  if(!window.__elderwoodRunning){window.__elderwoodRunning=true;document.getElementById('runtimeWarning')?.setAttribute('hidden','');}
   if(state.debug.stats){
     const f=playerFrame(),mode=player.mode==='attack'?attackPhase(player.elapsed,state.config):player.mode;
     $('stateReadout').textContent=mode;
